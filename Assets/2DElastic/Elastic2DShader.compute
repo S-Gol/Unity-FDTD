@@ -1,0 +1,88 @@
+#pragma kernel Elastic2DDifferentials
+#pragma kernel FillPatternedNoise
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+struct elasticMaterial
+{      
+	float vp, vs, rho, lam, mu;
+};
+
+RWTexture2D<float4> velTexture;
+
+RWStructuredBuffer<float2> u1Buffer;
+RWStructuredBuffer<float2> u2Buffer;
+RWStructuredBuffer<float2> u3Buffer;
+
+RWStructuredBuffer<int> matGridBuffer;
+RWStructuredBuffer<elasticMaterial> matDataBuffer;
+
+
+RWStructuredBuffer<float> weightBuffer;
+
+float co_dxx;
+float co_dzz;
+float co_dxz;
+
+float dt;
+float t;
+
+int nx;
+int nx2;
+int nz;
+int nz2;
+
+float2 buffV(uint3 id, RWStructuredBuffer<float2> buffer)
+{
+	float idx = (id.x + nx2 * id.y);
+	return buffer[idx];
+}
+elasticMaterial buffMat(uint3 id)
+{
+	float idx = (id.x + nx2 * id.y);
+	int matID = matGridBuffer[idx];
+	return matDataBuffer[matID];
+}
+
+[numthreads(8,8,1)]
+void Elastic2DDifferentials(uint3 id : SV_DispatchThreadID)
+{
+	
+	elasticMaterial material = buffMat(id);
+	float lam = material.lam;
+	float mu = material.mu;
+	float lam_2mu = lam + 2 * mu;
+	float dt2rho = dt * dt / material.rho;
+	
+	int idx = id.x + nx2 * id.y;
+	
+    //Central differencing
+	float2 du_dxx = co_dxx * (buffV(id + uint3(1, 0, 0), u2Buffer) - 2 * buffV(id + uint3(0, 0, 0), u2Buffer) + buffV(id + uint3(-1, 0, 0), u2Buffer));
+	float2 du_dzz = co_dzz * (buffV(id + uint3(0, 1, 0), u2Buffer) - 2 * buffV(id + uint3(0, 0, 0), u2Buffer) + buffV(id + uint3(0, -1, 0), u2Buffer));
+	float2 du_dxz = co_dxz * (buffV(id + uint3(1, 1, 0), u2Buffer) - 2 * buffV(id + uint3(0, 0, 0), u2Buffer) + buffV(id + uint3(-1, -1, 0), u2Buffer));
+
+	//stress from velocity derivatives
+	float2 stress = lam_2mu * du_dxx + lam * du_dxz + mu * (du_dzz + du_dxz);
+
+	//New velocity from stresses 
+    //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
+	u3Buffer[idx] = 2 * buffV(id + uint3(0, 0, 0), u2Buffer) - buffV(id + uint3(0, 0, 0), u1Buffer) + stress * dt2rho;
+
+	bool inSource = (abs(id.x - 200) < 20) * (abs(id.y - 200) < 20);
+	
+	u3Buffer[idx] = inSource * float2(sin(t * 1), sin(t * 1)) * 10 + !inSource * u3Buffer[idx];
+	
+	u2Buffer[idx] = u3Buffer[idx] * weightBuffer[idx];
+	u1Buffer[idx] = u2Buffer[idx] * weightBuffer[idx];
+	
+	velTexture[id.xy] = float4(u3Buffer[idx], 0, 0)*1000;
+
+}
+
+[numthreads(8, 8, 1)]
+void FillPatternedNoise(uint3 id : SV_DispatchThreadID)
+{
+	int idx = id.x + nx2 * id.y;
+	u3Buffer[idx] = float2(id.x & id.y, (id.x & 15) / 15.0);
+}
