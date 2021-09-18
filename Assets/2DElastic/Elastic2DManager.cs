@@ -206,7 +206,7 @@ public class Elastic2DManager : MonoBehaviour
         List<Source2D> sources = new List<Source2D>();
         sources.Add(new Source2D(200, 200, 100000));
 
-        model = new ElasticModel2D(sources, new int[406, 406],10, matArr, FDTDShader);
+        model = new ElasticModel2D(sources, new int[1606, 1606],10, matArr, FDTDShader);
     }
 
     // Update is called once per frame

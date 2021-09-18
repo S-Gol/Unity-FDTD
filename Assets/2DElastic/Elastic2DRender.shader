@@ -2,7 +2,9 @@ Shader "FDTD/Elastic2DRender"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _CMapTex ("Color map", 2D) = "white" {}
+        _VelMult("Velocity Multiplier", Float) = 1000
+
     }
     SubShader
     {
@@ -33,22 +35,25 @@ Shader "FDTD/Elastic2DRender"
             };
 
             sampler2D velTexture;
-            float4 _MainTex_ST;
+            sampler2D _CMapTex;
+            float _VelMult;
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                UNITY_TRANSFER_FOG(o,o.vertex);
+                o.uv = v.uv;
                 return o;
             }
 
             fixed4 frag (v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = tex2D(velTexture, i.uv);
-                col.w=1;
+                fixed4 VelStress = tex2D(velTexture, i.uv);
+                float magnitude = pow(pow(VelStress.x, 2) + pow(VelStress.y, 2), 0.5) * _VelMult;
+
+                fixed4 col = tex2D(_CMapTex, float2(magnitude,0.5));
+
                 // apply fog
                 return col;
             }

@@ -76,7 +76,7 @@ void Elastic2DDifferentials(uint3 id : SV_DispatchThreadID)
 	u2Buffer[idx] = u3Buffer[idx] * weightBuffer[idx];
 	u1Buffer[idx] = u2Buffer[idx] * weightBuffer[idx];
 	
-	velTexture[id.xy] = float4(u3Buffer[idx], 0, 0)*1000;
+    velTexture[id.xy] = float4(u3Buffer[idx], stress);
 
 }
 
