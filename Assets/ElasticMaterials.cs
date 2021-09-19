@@ -30,7 +30,7 @@ public static class ElasticMaterials
         {"Pyrex", new ElasticFDTD.Material(5640,3280,2320)},
         {"Glass", new ElasticFDTD.Material(3980,2380,3880)},
         {"Lucite", new ElasticFDTD.Material(2680,1100,1180)},
-        {"Nylon 6-6", new ElasticFDTD.Material(2620,1070,1110)},
+        {"Nylon", new ElasticFDTD.Material(2620,1070,1110)},
         {"Polyethylene", new ElasticFDTD.Material(1950,540,900)},
         {"Polystyrene", new ElasticFDTD.Material(2350,1120,1060)},
 
