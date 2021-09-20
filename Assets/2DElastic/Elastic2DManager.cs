@@ -12,6 +12,7 @@ public class Elastic2DManager : MonoBehaviour
 
     public ComputeShader FDTDShader;
 
+    public bool restart;
     public class ElasticModel2D
     {
         #region var declarations
@@ -61,7 +62,9 @@ public class Elastic2DManager : MonoBehaviour
         }
         public ElasticModel2D(List<Source2D> sources, int[,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader)
         {
-            dx = dy = ds;
+            dx = ds;
+            dy = ds;
+
             t = 0;
             nt = 0;
             materials = Mats;
@@ -98,10 +101,12 @@ public class Elastic2DManager : MonoBehaviour
             abs_rate = 0.3f / abs_thick;
             // Field setup 
             weights = new float[(nx + 2) * (ny + 2)];
+           
             for (int i = 0; i < weights.Length; i++)
             {
                 weights[i] = 1;
             }
+            
             for (int iy = 0; iy < ny + 2; iy++)
             {
                 for (int ix = 0; ix < nx + 2; ix++)
@@ -196,7 +201,7 @@ public class Elastic2DManager : MonoBehaviour
             
             Shader.SetGlobalFloat("co_dxx", 1 / (dx * dx));
             Shader.SetGlobalFloat("co_dyy", 1 / (dy * dy));
-            Shader.SetGlobalFloat("co_dxy", 1 / (4*dx * dy));
+            Shader.SetGlobalFloat("co_dxy", 1 / (4f * dx * dy));
 
             Shader.SetGlobalFloat("dt", dt);
 
@@ -248,9 +253,9 @@ public class Elastic2DManager : MonoBehaviour
     {
         ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[2];
         matArr[0] = ElasticMaterials.materials["steel"];
-        matArr[1] = ElasticMaterials.materials["Nylon"];
+        matArr[1] = ElasticMaterials.materials["steel"];
 
-        int[,] matGrid = new int[400,400];
+        int[,] matGrid = new int[1000,1000];
 
         for (int x = 0; x < 400; x++)
         {
@@ -262,10 +267,10 @@ public class Elastic2DManager : MonoBehaviour
 
         List<Source2D> sources = new List<Source2D>();
 
-        sources.Add(new Source2D(200, 50, 100000));
+        sources.Add(new Source2D(200, 50, 10));
 
 
-        model = new ElasticModel2D(sources, matGrid, 0.0015f, matArr, FDTDShader);
+        model = new ElasticModel2D(sources, matGrid, 10f, matArr, FDTDShader);
         nsTotal = 0;
     }
 
@@ -274,6 +279,12 @@ public class Elastic2DManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        if (restart)
+        {
+            restart = false;
+            Start();
+        }
         stopWatch.Reset();
         stopWatch.Start();
 

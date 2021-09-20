@@ -54,7 +54,7 @@ Shader "FDTD/Elastic2DRender"
 
                 fixed4 col = tex2D(_CMapTex, float2(magnitude,0.5));
 
-                // apply fog
+                
                 return col;
             }
             ENDCG

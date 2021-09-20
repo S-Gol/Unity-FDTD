@@ -37,14 +37,19 @@ int nx2;
 int ny;
 int ny2;
 
+int Index(int3 id)
+{
+    return id.x + 1 + nx2 * (id.y + 1);
+}
+
 float2 buffV(int3 id, RWStructuredBuffer<float2> buffer)
 {
-    int idx = id.x + 1 + nx2 * (id.y + 1);
-    return buffer[idx];
+    int index = Index(id);
+    return buffer[index];
 }
 elasticMaterial buffMat(uint3 id)
 {
-    int idx = id.x + 1 + nx2 * (id.y + 1);
+    int idx = Index(id);
     int matID = matGridBuffer[idx];
 	return matDataBuffer[matID];
 }
@@ -57,10 +62,10 @@ void Elastic2DDifferentials(int3 id : SV_DispatchThreadID)
 
 	float lam = material.lam;
 	float mu = material.mu;
-	float lam_2mu = lam + 2 * mu;
+	float lam_2mu = lam + 2.0 * mu;
 	float dt2rho = dt * dt / material.rho;
 	
-    int idx = id.x + 1 + nx2 * (id.y + 1);
+    int index = Index(id);
 	
 	
     //Central differencing
@@ -73,11 +78,15 @@ void Elastic2DDifferentials(int3 id : SV_DispatchThreadID)
     stress.x = lam_2mu * du_dxx.x + lam * du_dxy.y + mu * (du_dyy.x + du_dxy.y);
     stress.y = mu * (du_dxy.x + du_dxx.y) + lam * du_dxy.x + lam_2mu * du_dyy.y;
 
+    
 	//New velocity from stresses 
     //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
-	u3Buffer[idx] = 2.0 * buffV(id, u2Buffer) - buffV(id, u1Buffer) + stress * dt2rho;
+    u3Buffer[index] = 2.0 * buffV(id, u2Buffer) - buffV(id, u1Buffer) + stress * dt2rho;
 	
-    velTexture[id.xy] = float4(u3Buffer[idx].x, u3Buffer[idx].y, 0, 1);
+    //bool isInSource = (abs(id.x - 200) < 20) * (abs(id.y - 200) < 20);
+    //u3Buffer[index] = u3Buffer[index] * !isInSource + float2(0, sin(10000*t))*isInSource*100;
+    
+    velTexture[id.xy] = float4(u3Buffer[index].x, u3Buffer[index].y, 0, 1);
 
 }
 
@@ -93,15 +102,15 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 {
     int2 sPoint = sourcePosBuffer[id.x];
     uint idx = (sPoint.x + nx2 * sPoint.y);
-    u3Buffer[idx] += sourceValBuffer[id.x]*1e3;
+    u3Buffer[idx] = sourceValBuffer[id.x];
 }
 
 
 [numthreads(8, 8, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
-    int idx = id.x + 1 + nx2 * (id.y + 1);
-	
-    u2Buffer[idx] = u3Buffer[idx] * weightBuffer[idx];
+    int idx = Index(id);
+    
     u1Buffer[idx] = u2Buffer[idx] * weightBuffer[idx];
+    u2Buffer[idx] = u3Buffer[idx] * weightBuffer[idx];
 }
