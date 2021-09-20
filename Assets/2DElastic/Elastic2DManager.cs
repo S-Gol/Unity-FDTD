@@ -255,7 +255,7 @@ public class Elastic2DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["steel"];
 
-        int[,] matGrid = new int[1000,1000];
+        int[,] matGrid = new int[400,400];
 
         for (int x = 0; x < 400; x++)
         {
@@ -294,7 +294,6 @@ public class Elastic2DManager : MonoBehaviour
 
         double nanosecExTime = ((double)stopWatch.ElapsedTicks / Stopwatch.Frequency) * 1e9;
         nsTotal += nanosecExTime;
-        //UnityEngine.Debug.Log("Timestep Time, microseconds: " + nanosecExTime/1000);
-        //UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt*1000));
+        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt*1000));
     }
 }
