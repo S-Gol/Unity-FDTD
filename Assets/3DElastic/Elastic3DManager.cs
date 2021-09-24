@@ -4,34 +4,33 @@ using UnityEngine;
 using ElasticFDTD;
 using System.Diagnostics;
 
-public class Elastic2DManager : MonoBehaviour
+public class Elastic3DManager : MonoBehaviour
 {
-    /// <summary>
-    /// Class representing an elastic wave simulation scenario
-    /// </summary>
+
 
     public ComputeShader FDTDShader;
 
     public bool restart;
-    public class ElasticModel2D
+    public class ElasticModel3D
     {
+        const int threadGroups = 512;
         #region var declarations
-        public float dx, dy, ds, t;
-        public int nx, ny, nx2, ny2;
+        public float dx, dy, dz, ds, t;
+        public int nx, ny, nz, nx2, ny2, nz2;
         public int nt, ntDisplay;
         float[] rho, vp, vs, lam, mu;
         public int[] materialGrid;
         public ElasticFDTD.Material[] materials;
         public float maxVP, dt;
-        List<Vector2Int> sourcePoints;
+        List<Vector3Int> sourcePoints;
         List<float> sourceFreqs;
-        Vector2[] sourceVals;
+        Vector3[] sourceVals;
 
-        int abs_thick;
-        float abs_rate;
+        int absThick;
+        float absRate;
 
-        //Pseudo-2D arrays
-        public Vector2[] u1, u2, u3;
+        //Pseudo-3D arrays
+        public Vector3[] u1, u2, u3;
         public float[] weights;
 
         //Shader data
@@ -43,27 +42,26 @@ public class Elastic2DManager : MonoBehaviour
         ComputeBuffer sourceValBuffer, sourcePosBuffer;
 
         int differentialKernel;
-        int patternKernel;
         int sourceKernel;
         int copyKernel;
-        
+
         #endregion
-        public int xyToIdx(int x, int y)
+        int to1d(int x, int y, int z, int xSize, int ySize)
         {
-            return (x + nx * y);
+            return (z * xSize * ySize) + (y * xSize) + x;
         }
-        public int xyToIdx(int x, int y, int nx, int nz)
+        Vector3Int to3d(int idx, int xSize, int ySize, int zSize)
         {
-            return (x + nx * y);
+            int z = idx / (xSize * ySize);
+            idx -= (z * xSize * ySize);
+            int y = idx / xSize;
+            int x = idx % xSize;
+            return new Vector3Int(x, y, z);
         }
-        public Vector2Int idxToXY(int idx)
+
+        public ElasticModel3D(List<Source3D> sources, int[,,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader)
         {
-            return new Vector2Int(idx % nx, idx / nx);
-        }
-        public ElasticModel2D(List<Source2D> sources, int[,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader)
-        {
-            dx = ds;
-            dy = ds;
+            dx = dy = dz = ds;
 
             t = 0;
             nt = 0;
@@ -72,15 +70,21 @@ public class Elastic2DManager : MonoBehaviour
             //Fill the grid if it does not exist
             nx = matGrid.GetLength(0);
             ny = matGrid.GetLength(1);
+            nz = matGrid.GetLength(2);
+
             nx2 = nx + 2;
             ny2 = ny + 2;
+            nz2 = nz + 2;
 
-            materialGrid = new int[nx2 * ny2];
+            materialGrid = new int[nx2 * ny2 * nz2];
             for (int x = 0; x < nx; x++)
             {
                 for (int y = 0; y < ny; y++)
                 {
-                    materialGrid[this.xyToIdx(x+1, y+1, nx2, ny2)] = matGrid[x, y];
+                    for (int z = 0; z < nz; z++)
+                    {
+                        materialGrid[this.to1d(x, y, z, nx2, ny2)] = matGrid[x, y, z];
+                    }
                 }
             }
 
@@ -93,52 +97,60 @@ public class Elastic2DManager : MonoBehaviour
                     maxVP = mat.vp;
             }
 
-            dt = 0.8f / (maxVP * Mathf.Sqrt(1.0f / Mathf.Pow(dx, 2) + 1.0f / Mathf.Pow(dy, 2)));
+            dt = 0.8f / (maxVP * Mathf.Sqrt(1.0f / Mathf.Pow(dx, 2) + 1.0f / Mathf.Pow(dy, 2) + 1.0f / Mathf.Pow(dz,2)));
 
             // Boundary - no reflections 
-            abs_thick = Mathf.RoundToInt(Mathf.Min(Mathf.Floor(0.15f * nx), Mathf.Floor(0.15f * ny)));
-            abs_rate = 0.3f / abs_thick;
+            absThick = Mathf.RoundToInt(Mathf.Min(Mathf.Min(Mathf.Floor(0.15f * nx), Mathf.Floor(0.15f * ny)), 0.15f*nz));
+            print(absThick);
+            absRate = 0.3f / absThick;
             // Field setup 
-            weights = new float[(nx + 2) * (ny + 2)];
-           
+
+            weights = new float[nx2 * ny2 * nz2];
+
             for (int i = 0; i < weights.Length; i++)
             {
                 weights[i] = 1;
             }
-            
-            for (int iy = 0; iy < ny + 2; iy++)
+
+            for (int x = 0; x < nx2; x++)
             {
-                for (int ix = 0; ix < nx + 2; ix++)
+                for (int y = 0; y < ny2; y++)
                 {
-                    int i = 0;
-                    int k = 0;
-
-                    if (ix < abs_thick + 1)
-                        i = abs_thick + 1 - ix;
-
-                    if (iy < abs_thick + 1)
-                        k = abs_thick + 1 - iy;
-
-                    if (nx - abs_thick < ix)
-                        i = ix - nx + abs_thick;
-
-                    if (ny - abs_thick < iy)
-                        k = iy - ny + abs_thick;
-
-                    if (i != 0 && k != 0)
+                    for (int z = 0; z < nz2; z++)
                     {
-                        float rr = abs_rate * abs_rate * (i * i + k * k);
-                        weights[this.xyToIdx(ix, iy, nx2, ny2)] = Mathf.Exp(-rr);
-                    }
+                        int i = 0;
+                        int j = 0;
+                        int k = 0;
 
+                        if (x < absThick + 1)
+                            i = absThick + 1 - x;
+                        if (y < absThick + 1)
+                            j = absThick + 1 - y;
+                        if (z < absThick + 1)
+                            k = absThick + 1 - z;
+
+                        if (nx - absThick < x)
+                            i = x - nx + absThick;
+                        if (ny - absThick < y)
+                            j = y - ny + absThick;
+                        if (nz - absThick < z)
+                            k = z - nz + absThick;
+
+                        if (i != 0 && j != 0 && k != 0) 
+                        {
+                            float rr = absRate * absRate * (i * i + j * j + k * k);
+                            weights[to1d(x,y,z,nx2,ny2)] = Mathf.Exp(-rr);
+                        }
+                    }
                 }
             }
-            //Array allocation
-            u1 = new Vector2[(nx + 2) * (ny + 2)];
-            u2 = new Vector2[(nx + 2) * (ny + 2)];
-            u3 = new Vector2[(nx + 2) * (ny + 2)];
 
-            sourcePoints = new List<Vector2Int>();
+            //Array allocation
+            u1 = new Vector3[nx2 * ny2 * nz2];
+            u2 = new Vector3[nx2 * ny2 * nz2];
+            u3 = new Vector3[nx2 * ny2 * nz2];
+
+            sourcePoints = new List<Vector3Int>();
             sourceFreqs = new List<float>();
 
             //Assign sources
@@ -147,43 +159,39 @@ public class Elastic2DManager : MonoBehaviour
                 sourcePoints.Add(sources[i].point);
                 sourceFreqs.Add(sources[i].f);
             }
-            sourceVals = new Vector2[sources.Count];
+            sourceVals = new Vector3[sources.Count];
 
             this.FDTDShader = FDTDShader;
             shaderInit();
         }
-       
+
         public void shaderInit()
         {
-            UnityEngine.Debug.Log("Initializing 2D FDTD compute");
-            differentialKernel = FDTDShader.FindKernel("Elastic2DDifferentials");
-            patternKernel = FDTDShader.FindKernel("FillPatternedNoise");
+            UnityEngine.Debug.Log("Initializing 3D FDTD compute");
+
+            differentialKernel = FDTDShader.FindKernel("Elastic3DDifferentials");
             sourceKernel = FDTDShader.FindKernel("SetSourcePoint");
             copyKernel = FDTDShader.FindKernel("CopyBuffers");
 
 
             //Buffers
-            u1Buffer = new ComputeBuffer((nx + 2) * (ny + 2), 8);
-            u2Buffer = new ComputeBuffer((nx + 2) * (ny + 2), 8);
-            u3Buffer = new ComputeBuffer((nx + 2) * (ny + 2), 8);
-            weightBuffer = new ComputeBuffer((nx + 2) * (ny + 2), 4);
-            weightBuffer.SetData(weights);
+            u1Buffer = new ComputeBuffer(nx2 * ny2 * nz2, 12);
+            u2Buffer = new ComputeBuffer(nx2 * ny2 * nz2, 12);
+            u3Buffer = new ComputeBuffer(nx2 * ny2 * nz2, 12);
+            weightBuffer = new ComputeBuffer(nx2 * ny2 * nz2, 4);
 
-            //Result texture
-            velTexture = new RenderTexture(nx + 2, ny + 2, 32, RenderTextureFormat.Default, RenderTextureReadWrite.Default);
-            velTexture.enableRandomWrite = true;
-            velTexture.Create();
+            weightBuffer.SetData(weights);
 
             //Send material data to buffers
             matData = new ComputeBuffer(materials.Length, 4 * 5);
             matData.SetData(materials);
 
-            matGrid = new ComputeBuffer(nx2 * ny2, 4);
+            matGrid = new ComputeBuffer(nx2 * ny2 * nz2, 4);
             matGrid.SetData(materialGrid);
 
             //Source buffers
-            sourcePosBuffer = new ComputeBuffer(sourcePoints.Count, 8);
-            sourceValBuffer = new ComputeBuffer(sourcePoints.Count, 8);
+            sourcePosBuffer = new ComputeBuffer(sourcePoints.Count, 12);
+            sourceValBuffer = new ComputeBuffer(sourcePoints.Count, 12);
 
             sourcePosBuffer.SetData(sourcePoints);
 
@@ -197,22 +205,24 @@ public class Elastic2DManager : MonoBehaviour
 
 
             Shader.SetGlobalTexture("velTexture", velTexture);
-            
-            Shader.SetGlobalFloat("co_dxx", 1 / (dx * dx));
-            Shader.SetGlobalFloat("co_dyy", 1 / (dy * dy));
-            Shader.SetGlobalFloat("co_dxy", 1 / (4f * dx * dy));
+
+            Shader.SetGlobalFloat("co_dx", 1 / (2 * dx));
+            Shader.SetGlobalFloat("co_dy", 1 / (2 * dy));
+            Shader.SetGlobalFloat("co_dz", 1 / (2 * dz));
 
             Shader.SetGlobalFloat("dt", dt);
-
 
             Shader.SetGlobalInt("nx", nx);
             Shader.SetGlobalInt("nx2", nx2);
             Shader.SetGlobalInt("ny", ny);
             Shader.SetGlobalInt("ny2", ny2);
+            Shader.SetGlobalInt("nz", nz);
+            Shader.SetGlobalInt("nz2", nz2);
+
+            Shader.SetGlobalVector("size", new Vector4(nx2,ny2,nz2,0));
+
 
             Shader.SetGlobalBuffer("sourcePosBuffer", sourcePosBuffer);
-
-
 
         }
         public void timeStep()
@@ -223,7 +233,7 @@ public class Elastic2DManager : MonoBehaviour
             //todo add a iteration-time measurement
 
             //Dispatch the differential calcs
-            FDTDShader.Dispatch(differentialKernel, nx / 8, ny / 8, 1);
+            FDTDShader.Dispatch(differentialKernel, nx2 * ny2 * nz2/ threadGroups, 1, 1);
 
             //Dispatch the source updates
             for (int i = 0; i < sourceVals.Length; i++)
@@ -232,7 +242,7 @@ public class Elastic2DManager : MonoBehaviour
                 float f0 = sourceFreqs[i];
                 float t0 = 1f / f0;
                 float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-                sourceVals[i]=new Vector2(tempV, 0);
+                sourceVals[i] = new Vector2(tempV, 0);
             }
 
             sourceValBuffer.SetData(sourceVals);
@@ -240,36 +250,30 @@ public class Elastic2DManager : MonoBehaviour
             FDTDShader.Dispatch(sourceKernel, 1, 1, 1);
 
             //Move the values to their next buffer
-            FDTDShader.Dispatch(copyKernel, nx / 8, ny / 8, 1);
+            FDTDShader.Dispatch(copyKernel, nz2*ny2*nx2/ threadGroups, 1, 1);
 
         }
     }
 
-    ElasticModel2D model;
+    ElasticModel3D model;
 
     // Start is called before the first frame update
     void Start()
     {
         ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[2];
         matArr[0] = ElasticMaterials.materials["steel"];
-        matArr[1] = ElasticMaterials.materials["steel"];
+        matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,] matGrid = new int[400,400];
-
-        for (int x = 0; x < 400; x++)
-        {
-            for (int y = 100; y < 130; y++)
-            {
-                matGrid[x, y] = 1;
-            }
-        }
-
-        List<Source2D> sources = new List<Source2D>();
-
-        sources.Add(new Source2D(200, 50, 10));
+        int[,,] matGrid = new int[200, 200, 200];
 
 
-        model = new ElasticModel2D(sources, matGrid, 10f, matArr, FDTDShader);
+
+        List<Source3D> sources = new List<Source3D>();
+
+        sources.Add(new Source3D(200, 200, 200, 10));
+
+
+        model = new ElasticModel3D(sources, matGrid, 10f, matArr, FDTDShader);
         nsTotal = 0;
     }
 
@@ -293,6 +297,6 @@ public class Elastic2DManager : MonoBehaviour
 
         double nanosecExTime = ((double)stopWatch.ElapsedTicks / Stopwatch.Frequency) * 1e9;
         nsTotal += nanosecExTime;
-        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt*1000));
+        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
     }
 }

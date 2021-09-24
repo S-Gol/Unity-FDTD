@@ -52,24 +52,21 @@ Shader "FDTD/Render3D"
             }
             float _MinVal;
             float _MaxVal;
-            int3 _Size;
-            StructuredBuffer<float> testBuffer;
+            int3 size;
+            StructuredBuffer<float3> u3Buffer;
 
 
             int to1d(int x, int y, int z)
             {
-                return (z * _Size.x * _Size.y) + (y * _Size.x) + x;
+                return (z * size.x * size.y) + (y * size.x) + x;
             }
 
             float getDensity(float3 pos)
             {
                 //return sin(pos.x*20)*sin(pos.y*20)*sin(pos.z*20);
-                int3 index;
-                index.x = pos.x * _Size.x;
-                index.y = pos.y * _Size.y;
-                index.z = pos.z * _Size.z;
+                int3 index = pos * size;
 
-                return testBuffer[to1d(index.x, index.y, index.z)];
+                return length(u3Buffer[to1d(index.x, index.y, index.z)])*10;
 
             }
 

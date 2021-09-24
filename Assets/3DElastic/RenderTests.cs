@@ -26,7 +26,6 @@ public class RenderTests : MonoBehaviour
     {
         rayTestArr = new float[size*size*size];
         xSize = ySize = zSize = size;
-        int halfSize = size / 2;
 
         for (int x = 0; x < size; x++)
         {

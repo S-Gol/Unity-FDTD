@@ -1,0 +1,110 @@
+#pragma kernel Elastic3DDifferentials
+#pragma kernel SetSourcePoint
+#pragma kernel CopyBuffers
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+struct elasticMaterial
+{
+    float vp, vs, rho, lam, mu;
+};
+
+int3 to3d(int idx, int xSize, int ySize, int zSize)
+{
+    int z = idx / (xSize * ySize);
+    int newIdx = idx - (z * xSize * ySize);
+    int y = newIdx / xSize;
+    int x = newIdx % xSize;
+    return int3(x, y, z);
+}
+
+RWTexture2D<float4> velTexture;
+
+RWStructuredBuffer<float3> u1Buffer;
+RWStructuredBuffer<float3> u2Buffer;
+RWStructuredBuffer<float3> u3Buffer;
+
+RWStructuredBuffer<int> matGridBuffer;
+RWStructuredBuffer<elasticMaterial> matDataBuffer;
+
+RWStructuredBuffer<int3> sourcePosBuffer;
+RWStructuredBuffer<float3> sourceValBuffer;
+
+
+RWStructuredBuffer<float> weightBuffer;
+
+float co_dx;
+float co_dy;
+float co_dz;
+
+float dt;
+float t;
+
+int nx;
+int nx2;
+int ny;
+int ny2;
+int nz;
+int nz2;
+
+[numthreads(512, 1, 1)]
+void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
+{
+
+    int3 pos = to3d(id.x, nx2, ny2, nz2);
+    
+    elasticMaterial material = matDataBuffer[matGridBuffer[id.x]];
+
+    float lam = material.lam;
+    float mu = material.mu;
+    float lam_2mu = lam + 2.0 * mu;
+    float dt2rho = dt * dt / material.rho;
+    float lam_mu = lam + mu;
+    
+    int xOffset = 1;
+    int yOffset = nx2;
+    int zOffset = nx2 * ny2;
+	
+	
+    //Central differencing 
+    float3 du_dxx = co_dx * co_dx * u2Buffer[id.x + xOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset];
+    float3 du_dyy = co_dy * co_dy * u2Buffer[id.x + yOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - yOffset];
+    float3 du_dzz = co_dz * co_dz * u2Buffer[id.x + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - zOffset];
+    
+    float3 du_dxz = co_dx * co_dx * u2Buffer[id.x + xOffset + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset - zOffset];
+    float3 du_dyz = co_dx * co_dx * u2Buffer[id.x + yOffset + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - yOffset - zOffset];
+    float3 du_dxy = co_dx * co_dx * u2Buffer[id.x + xOffset + yOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset - yOffset];
+
+    
+	//stress from velocity derivatives
+    float3 stress;
+    stress.x = lam_2mu * du_dxx.x + mu * du_dyy.x + mu * du_dzz.x + lam_mu * du_dxz.z + lam_mu * du_dxy.y;
+    stress.y = mu * du_dxx.y + lam_2mu * du_dyy.y + mu * du_dzz.y + lam_mu * du_dyz.z + lam_mu * du_dxy.x;
+    stress.z = mu * du_dxx.z + mu * du_dyy.z + lam_2mu * du_dzz.z + lam_mu * du_dyz.y + lam_mu * du_dxz.x;
+    
+	//New velocity from stresses 
+    //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
+    u3Buffer[id.x] = 2.0 * u2Buffer[id.x] - u1Buffer[id.x] + stress * dt2rho;
+	
+    bool isInSource = (abs(pos.x - 100) < 10) * (abs(pos.y - 100) < 10) * (abs(pos.z - 100) < 10);
+
+    u3Buffer[id.x] = float3(1, 1, 1) * sin(t * 10) * isInSource + u3Buffer[id.x]*!isInSource;
+
+}
+
+[numthreads(512, 1, 1)]
+void SetSourcePoint(uint3 id : SV_DispatchThreadID)
+{
+    int3 sPoint = sourcePosBuffer[id.x];
+    uint idx = (sPoint.x + nx2 * sPoint.y);
+    u3Buffer[idx] = sourceValBuffer[id.x];
+}
+
+
+[numthreads(512, 1, 1)]
+void CopyBuffers(uint3 id : SV_DispatchThreadID)
+{
+    
+    u1Buffer[id.x] = u2Buffer[id.x] * weightBuffer[id.x];
+    u2Buffer[id.x] = u3Buffer[id.x] * weightBuffer[id.x];
+}
