@@ -232,7 +232,7 @@ public class Elastic3DManager : MonoBehaviour
             int numThreadGroups = Mathf.CeilToInt((float)nx2 * (float)ny2 * (float)nz2 / threadGroups);
             //Dispatch the differential calcs
             FDTDShader.Dispatch(differentialKernel, numThreadGroups, 1, 1);
-            /*
+            
             //Dispatch the source updates
             for (int i = 0; i < sourceVals.Length; i++)
             {
@@ -245,11 +245,10 @@ public class Elastic3DManager : MonoBehaviour
 
             sourceValBuffer.SetData(sourceVals);
             Shader.SetGlobalBuffer("sourceValBuffer", sourceValBuffer);
-            //FDTDShader.Dispatch(sourceKernel, 1, 1, 1);
-            */
+            FDTDShader.Dispatch(sourceKernel, 1, 1, 1);
+            
             //Move the values to their next buffer
             FDTDShader.Dispatch(copyKernel, numThreadGroups, 1, 1);
-
         }
     }
 
@@ -262,8 +261,8 @@ public class Elastic3DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[200, 200, 200];
-
+        int[,,] matGrid = new int[150, 150, 150];
+        /*
         for (int x = 0; x < 200; x++)
         {
             for (int z = 0; z < 200; z++)
@@ -274,14 +273,14 @@ public class Elastic3DManager : MonoBehaviour
                 }
             }
         }
-
+        */
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(100, 150, 100, 10));
+        sources.Add(new Source3D(100, 100, 100, 1000));
 
 
-        model = new ElasticModel3D(sources, matGrid, 10f, matArr, FDTDShader);
+        model = new ElasticModel3D(sources, matGrid, 0.1f, matArr, FDTDShader);
         nsTotal = 0;
     }
 

@@ -4,6 +4,10 @@ Shader "FDTD/Render3D"
     {
         _MinVal ("Min value", float) = 0
         _MaxVal("Max value", float) = 2
+        _CMapTex("Color map", 2D) = "white" {}
+        _VelMult("Velocity Multiplier", Float) = 1000
+        _OpacityMult("Opacity Multiplier", Float) = 1000
+
 
     }
     SubShader
@@ -52,10 +56,12 @@ Shader "FDTD/Render3D"
             }
             float _MinVal;
             float _MaxVal;
+            float _VelMult;
+            float _OpacityMult;
             int3 size;
             StructuredBuffer<float3> u3Buffer;
             StructuredBuffer<float> weightBuffer;
-
+            sampler2D _CMapTex;
 
             int to1d(int x, int y, int z)
             {
@@ -68,11 +74,10 @@ Shader "FDTD/Render3D"
                 int3 intPos = pos * size;
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
-                return length(u3Buffer[index]);
+                return length(u3Buffer[index])*5;
 
             }
 
-            sampler2D _MainTex;
 
             // Direct Volume Rendering
             fixed4 frag_mip(v2f i) : SV_TARGET
@@ -98,8 +103,9 @@ Shader "FDTD/Render3D"
                 }
 
                 // Maximum intensity projection
-                float4 col = float4(1, 1, 1, maxDensity);
-
+                float4 col = tex2D(_CMapTex, float2(maxDensity* _VelMult, 0.5));
+                //float4 col = float4(1, 1, 1, maxDensity);
+                col.w = maxDensity* _OpacityMult;
                 return col;
             }
             ENDCG

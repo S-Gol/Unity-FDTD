@@ -61,7 +61,7 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
     
     
     int3 pos = to3d(id.x, nx2, ny2, nz2);
-    int index = to1d(pos.x, pos.y, pos.z);
+    int index = id.x;
     
     elasticMaterial material = matDataBuffer[matGridBuffer[index]];
 
@@ -69,6 +69,7 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
     float mu = material.mu;
     float lam_2mu = lam + 2.0 * mu;
     float dt2rho = dt * dt / material.rho;
+
     float lam_mu = lam + mu;
     
     int xOffset = 1;
@@ -77,16 +78,17 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 	
 	
     //Central differencing 
-    float3 du_dxx = co_dx * co_dx * u2Buffer[index + xOffset] - 2 * u2Buffer[index] + u2Buffer[index - xOffset];
-    float3 du_dyy = co_dy * co_dy * u2Buffer[index + yOffset] - 2 * u2Buffer[index] + u2Buffer[index - yOffset];
-    float3 du_dzz = co_dz * co_dz * u2Buffer[index + zOffset] - 2 * u2Buffer[index] + u2Buffer[index - zOffset];
+    float3 du_dxx = 4*co_dx * co_dx * (u2Buffer[index + xOffset] - 2 * u2Buffer[index] + u2Buffer[index - xOffset]);
+    float3 du_dyy = 4*co_dy * co_dy * (u2Buffer[index + yOffset] - 2 * u2Buffer[index] + u2Buffer[index - yOffset]);
+    float3 du_dzz = 4*co_dz * co_dz * (u2Buffer[index + zOffset] - 2 * u2Buffer[index] + u2Buffer[index - zOffset]);
     
     // +1,+1 - +1,-1 - -1,+1 + -1,-1  
+
     float3 du_dxz = co_dx * co_dz * (u2Buffer[index + xOffset + zOffset] - u2Buffer[index + xOffset - zOffset] - u2Buffer[index - xOffset + zOffset] + u2Buffer[index - xOffset - zOffset]);
     float3 du_dyz = co_dy * co_dz * (u2Buffer[index + yOffset + zOffset] - u2Buffer[index + yOffset - zOffset] - u2Buffer[index - yOffset + zOffset] + u2Buffer[index - yOffset - zOffset]);
     float3 du_dxy = co_dx * co_dy * (u2Buffer[index + xOffset + yOffset] - u2Buffer[index + xOffset - yOffset] - u2Buffer[index - xOffset + yOffset] + u2Buffer[index - xOffset - yOffset]);
 
-	//stress from velocity derivatives
+	//stress from velocity derivatives  
     float3 stress;
 
     stress.x = lam_2mu * du_dxx.x + mu * du_dyy.x + mu * du_dzz.x + lam_mu * du_dxz.z + lam_mu * du_dxy.y;
@@ -96,10 +98,6 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 	//New velocity from stresses 
     //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
     u3Buffer[index] = 2.0 * u2Buffer[index] - u1Buffer[index] + stress * dt2rho;
-    
-    bool isInSource = (abs(pos.x - 100) < 10) * (abs(pos.y - 100) < 10) * (abs(pos.z - 100) < 10);
-
-    u3Buffer[index] = float3(1, 1, 1) * isInSource * 1000 + int(!isInSource)*u3Buffer[index];
 
 }
 
@@ -108,7 +106,7 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 {
     int3 sPoint = sourcePosBuffer[id.x];
     uint idx = to1d(sPoint.x, sPoint.y, sPoint.z);
-    u3Buffer[idx] = sourceValBuffer[id.x];
+    u3Buffer[idx] += sourceValBuffer[id.x];
 }
 
 

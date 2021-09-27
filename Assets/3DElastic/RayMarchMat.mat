@@ -23,6 +23,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _CMapTex:
+        m_Texture: {fileID: 2800000, guid: 9ac19d3f63aa4ff449da4b5a55a57291, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -69,17 +73,19 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxVal: 1000
+    - _MaxVal: 1
     - _Metallic: 0
-    - _MinVal: 0
+    - _MinVal: 0.05
     - _Mode: 0
     - _OcclusionStrength: 1
+    - _OpacityMult: 20
     - _Parallax: 0.02
     - _SmokeAbsorption: 0.3
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
+    - _VelMult: 1.1
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
