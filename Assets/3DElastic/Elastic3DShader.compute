@@ -18,6 +18,7 @@ int3 to3d(int idx, int xSize, int ySize, int zSize)
     return int3(x, y, z);
 }
 
+
 RWTexture2D<float4> velTexture;
 
 RWStructuredBuffer<float3> u1Buffer;
@@ -47,13 +48,22 @@ int ny2;
 int nz;
 int nz2;
 
-[numthreads(512, 1, 1)]
+int to1d(int x, int y, int z)
+{
+    return (z * nx2 * ny2) + (y * nx2) + x;
+}
+
+
+
+[numthreads(256, 1, 1)]
 void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 {
-
-    int3 pos = to3d(id.x, nx2, ny2, nz2);
     
-    elasticMaterial material = matDataBuffer[matGridBuffer[id.x]];
+    
+    int3 pos = to3d(id.x, nx2, ny2, nz2);
+    int index = to1d(pos.x, pos.y, pos.z);
+    
+    elasticMaterial material = matDataBuffer[matGridBuffer[index]];
 
     float lam = material.lam;
     float mu = material.mu;
@@ -67,44 +77,47 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 	
 	
     //Central differencing 
-    float3 du_dxx = co_dx * co_dx * u2Buffer[id.x + xOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset];
-    float3 du_dyy = co_dy * co_dy * u2Buffer[id.x + yOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - yOffset];
-    float3 du_dzz = co_dz * co_dz * u2Buffer[id.x + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - zOffset];
+    float3 du_dxx = co_dx * co_dx * u2Buffer[index + xOffset] - 2 * u2Buffer[index] + u2Buffer[index - xOffset];
+    float3 du_dyy = co_dy * co_dy * u2Buffer[index + yOffset] - 2 * u2Buffer[index] + u2Buffer[index - yOffset];
+    float3 du_dzz = co_dz * co_dz * u2Buffer[index + zOffset] - 2 * u2Buffer[index] + u2Buffer[index - zOffset];
     
-    float3 du_dxz = co_dx * co_dx * u2Buffer[id.x + xOffset + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset - zOffset];
-    float3 du_dyz = co_dx * co_dx * u2Buffer[id.x + yOffset + zOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - yOffset - zOffset];
-    float3 du_dxy = co_dx * co_dx * u2Buffer[id.x + xOffset + yOffset] - 2 * u2Buffer[id.x] + u2Buffer[id.x - xOffset - yOffset];
+    // +1,+1 - +1,-1 - -1,+1 + -1,-1  
+    float3 du_dxz = co_dx * co_dz * (u2Buffer[index + xOffset + zOffset] - u2Buffer[index + xOffset - zOffset] - u2Buffer[index - xOffset + zOffset] + u2Buffer[index - xOffset - zOffset]);
+    float3 du_dyz = co_dy * co_dz * (u2Buffer[index + yOffset + zOffset] - u2Buffer[index + yOffset - zOffset] - u2Buffer[index - yOffset + zOffset] + u2Buffer[index - yOffset - zOffset]);
+    float3 du_dxy = co_dx * co_dy * (u2Buffer[index + xOffset + yOffset] - u2Buffer[index + xOffset - yOffset] - u2Buffer[index - xOffset + yOffset] + u2Buffer[index - xOffset - yOffset]);
 
-    
 	//stress from velocity derivatives
     float3 stress;
+
     stress.x = lam_2mu * du_dxx.x + mu * du_dyy.x + mu * du_dzz.x + lam_mu * du_dxz.z + lam_mu * du_dxy.y;
     stress.y = mu * du_dxx.y + lam_2mu * du_dyy.y + mu * du_dzz.y + lam_mu * du_dyz.z + lam_mu * du_dxy.x;
     stress.z = mu * du_dxx.z + mu * du_dyy.z + lam_2mu * du_dzz.z + lam_mu * du_dyz.y + lam_mu * du_dxz.x;
-    
+
 	//New velocity from stresses 
     //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
-    u3Buffer[id.x] = 2.0 * u2Buffer[id.x] - u1Buffer[id.x] + stress * dt2rho;
-	
+    u3Buffer[index] = 2.0 * u2Buffer[index] - u1Buffer[index] + stress * dt2rho;
+    
     bool isInSource = (abs(pos.x - 100) < 10) * (abs(pos.y - 100) < 10) * (abs(pos.z - 100) < 10);
 
-    u3Buffer[id.x] = float3(1, 1, 1) * sin(t * 10) * isInSource + u3Buffer[id.x]*!isInSource;
+    u3Buffer[index] = float3(1, 1, 1) * isInSource * 1000 + int(!isInSource)*u3Buffer[index];
 
 }
 
-[numthreads(512, 1, 1)]
+[numthreads(8, 1, 1)]
 void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 {
     int3 sPoint = sourcePosBuffer[id.x];
-    uint idx = (sPoint.x + nx2 * sPoint.y);
+    uint idx = to1d(sPoint.x, sPoint.y, sPoint.z);
     u3Buffer[idx] = sourceValBuffer[id.x];
 }
 
 
-[numthreads(512, 1, 1)]
+[numthreads(256, 1, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
+    int3 pos = to3d(id.x, nx2, ny2, nz2);
+    int index = to1d(pos.x , pos.y , pos.z);
     
-    u1Buffer[id.x] = u2Buffer[id.x] * weightBuffer[id.x];
-    u2Buffer[id.x] = u3Buffer[id.x] * weightBuffer[id.x];
+    u1Buffer[index] = u2Buffer[index] * weightBuffer[index];
+    u2Buffer[index] = u3Buffer[index] * weightBuffer[index];
 }

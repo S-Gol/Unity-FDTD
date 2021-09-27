@@ -54,6 +54,7 @@ Shader "FDTD/Render3D"
             float _MaxVal;
             int3 size;
             StructuredBuffer<float3> u3Buffer;
+            StructuredBuffer<float> weightBuffer;
 
 
             int to1d(int x, int y, int z)
@@ -64,9 +65,10 @@ Shader "FDTD/Render3D"
             float getDensity(float3 pos)
             {
                 //return sin(pos.x*20)*sin(pos.y*20)*sin(pos.z*20);
-                int3 index = pos * size;
-
-                return length(u3Buffer[to1d(index.x, index.y, index.z)])*10;
+                int3 intPos = pos * size;
+                int index = to1d(intPos.x, intPos.y, intPos.z);
+                //return weightBuffer[index];
+                return length(u3Buffer[index]);
 
             }
 
@@ -76,7 +78,7 @@ Shader "FDTD/Render3D"
             fixed4 frag_mip(v2f i) : SV_TARGET
             {
                 #define NUM_STEPS 512
-                const float stepSize = 1.732f/*greatest distance in box*/ / NUM_STEPS;
+                const float stepSize = 1.732f/ NUM_STEPS;
 
                 float3 rayStartPos = i.vertexLocal + float3(0.5f, 0.5f, 0.5f);
                 float3 rayDir = normalize(ObjSpaceViewDir(float4(i.vertexLocal, 0.0f)));

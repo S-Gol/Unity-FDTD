@@ -13,7 +13,7 @@ public class Elastic3DManager : MonoBehaviour
     public bool restart;
     public class ElasticModel3D
     {
-        const int threadGroups = 512;
+        const int threadGroups = 256;
         #region var declarations
         public float dx, dy, dz, ds, t;
         public int nx, ny, nz, nx2, ny2, nz2;
@@ -101,7 +101,6 @@ public class Elastic3DManager : MonoBehaviour
 
             // Boundary - no reflections 
             absThick = Mathf.RoundToInt(Mathf.Min(Mathf.Min(Mathf.Floor(0.15f * nx), Mathf.Floor(0.15f * ny)), 0.15f*nz));
-            print(absThick);
             absRate = 0.3f / absThick;
             // Field setup 
 
@@ -206,9 +205,9 @@ public class Elastic3DManager : MonoBehaviour
 
             Shader.SetGlobalTexture("velTexture", velTexture);
 
-            Shader.SetGlobalFloat("co_dx", 1 / (2 * dx));
-            Shader.SetGlobalFloat("co_dy", 1 / (2 * dy));
-            Shader.SetGlobalFloat("co_dz", 1 / (2 * dz));
+            Shader.SetGlobalFloat("co_dx", 1f / (2f * dx));
+            Shader.SetGlobalFloat("co_dy", 1f / (2f * dy));
+            Shader.SetGlobalFloat("co_dz", 1f / (2f * dz));
 
             Shader.SetGlobalFloat("dt", dt);
 
@@ -230,11 +229,10 @@ public class Elastic3DManager : MonoBehaviour
             t += dt;
             nt++;
             Shader.SetGlobalFloat("t", t);
-            //todo add a iteration-time measurement
-
+            int numThreadGroups = Mathf.CeilToInt((float)nx2 * (float)ny2 * (float)nz2 / threadGroups);
             //Dispatch the differential calcs
-            FDTDShader.Dispatch(differentialKernel, nx2 * ny2 * nz2/ threadGroups, 1, 1);
-
+            FDTDShader.Dispatch(differentialKernel, numThreadGroups, 1, 1);
+            /*
             //Dispatch the source updates
             for (int i = 0; i < sourceVals.Length; i++)
             {
@@ -242,15 +240,15 @@ public class Elastic3DManager : MonoBehaviour
                 float f0 = sourceFreqs[i];
                 float t0 = 1f / f0;
                 float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-                sourceVals[i] = new Vector2(tempV, 0);
+                sourceVals[i] = new Vector3(0, -tempV, 0);
             }
 
             sourceValBuffer.SetData(sourceVals);
             Shader.SetGlobalBuffer("sourceValBuffer", sourceValBuffer);
-            FDTDShader.Dispatch(sourceKernel, 1, 1, 1);
-
+            //FDTDShader.Dispatch(sourceKernel, 1, 1, 1);
+            */
             //Move the values to their next buffer
-            FDTDShader.Dispatch(copyKernel, nz2*ny2*nx2/ threadGroups, 1, 1);
+            FDTDShader.Dispatch(copyKernel, numThreadGroups, 1, 1);
 
         }
     }
@@ -266,11 +264,21 @@ public class Elastic3DManager : MonoBehaviour
 
         int[,,] matGrid = new int[200, 200, 200];
 
+        for (int x = 0; x < 200; x++)
+        {
+            for (int z = 0; z < 200; z++)
+            {
+                for (int y = 120; y < 150; y++)
+                {
+                    matGrid[x, y, z] = 1;
+                }
+            }
+        }
 
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(200, 200, 200, 10));
+        sources.Add(new Source3D(100, 150, 100, 10));
 
 
         model = new ElasticModel3D(sources, matGrid, 10f, matArr, FDTDShader);
@@ -297,6 +305,6 @@ public class Elastic3DManager : MonoBehaviour
 
         double nanosecExTime = ((double)stopWatch.ElapsedTicks / Stopwatch.Frequency) * 1e9;
         nsTotal += nanosecExTime;
-        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
+        //UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
     }
 }
