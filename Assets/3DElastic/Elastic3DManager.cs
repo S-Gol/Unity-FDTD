@@ -13,7 +13,7 @@ public class Elastic3DManager : MonoBehaviour
     public bool restart;
     public class ElasticModel3D
     {
-        const int threadGroups = 512;
+        const int threadGroups = 1024;
         #region var declarations
         public float dx, dy, dz, ds, t;
         public int nx, ny, nz, nx2, ny2, nz2;
@@ -38,7 +38,6 @@ public class Elastic3DManager : MonoBehaviour
         ComputeBuffer u1Buffer, u2Buffer, u3Buffer;
         ComputeBuffer weightBuffer;
         ComputeBuffer matData, matGrid;
-        RenderTexture velTexture;
         ComputeBuffer sourceValBuffer, sourcePosBuffer;
 
         int differentialKernel;
@@ -203,7 +202,6 @@ public class Elastic3DManager : MonoBehaviour
             Shader.SetGlobalBuffer("matDataBuffer", matData);
 
 
-            Shader.SetGlobalTexture("velTexture", velTexture);
 
             Shader.SetGlobalFloat("co_dx", 1f / (2f * dx));
             Shader.SetGlobalFloat("co_dy", 1f / (2f * dy));
@@ -261,7 +259,7 @@ public class Elastic3DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[300, 300, 300];
+        int[,,] matGrid = new int[400, 400, 400];
         
         for (int x = 0; x < 300; x++)
         {

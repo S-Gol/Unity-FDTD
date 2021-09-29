@@ -19,7 +19,6 @@ uint3 to3d(uint idx, uint xSize, uint ySize, uint zSize)
 }
 
 
-RWTexture2D<float4> velTexture;
 
 RWStructuredBuffer<float3> u1Buffer;
 RWStructuredBuffer<float3> u2Buffer;
@@ -55,7 +54,7 @@ int to1d(uint x, uint y, uint z)
 
 
 
-[numthreads(512, 1, 1)]
+[numthreads(1024, 1, 1)]
 void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 {
     
@@ -116,7 +115,7 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(512, 1, 1)]
+[numthreads(1024, 1, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
     int3 pos = to3d(id.x, nx2, ny2, nz2);
