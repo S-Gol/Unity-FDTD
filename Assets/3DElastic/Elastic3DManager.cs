@@ -13,7 +13,7 @@ public class Elastic3DManager : MonoBehaviour
     public bool restart;
     public class ElasticModel3D
     {
-        const int threadGroups = 256;
+        const int threadGroups = 512;
         #region var declarations
         public float dx, dy, dz, ds, t;
         public int nx, ny, nz, nx2, ny2, nz2;
@@ -229,7 +229,7 @@ public class Elastic3DManager : MonoBehaviour
             t += dt;
             nt++;
             Shader.SetGlobalFloat("t", t);
-            int numThreadGroups = Mathf.CeilToInt((float)nx2 * (float)ny2 * (float)nz2 / threadGroups);
+            int numThreadGroups = Mathf.CeilToInt((float)nx * (float)ny * (float)nz / threadGroups);
             //Dispatch the differential calcs
             FDTDShader.Dispatch(differentialKernel, numThreadGroups, 1, 1);
             
@@ -261,26 +261,25 @@ public class Elastic3DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[150, 150, 150];
-        /*
-        for (int x = 0; x < 200; x++)
+        int[,,] matGrid = new int[300, 300, 300];
+        
+        for (int x = 0; x < 300; x++)
         {
-            for (int z = 0; z < 200; z++)
+            for (int z = 0; z < 300; z++)
             {
-                for (int y = 120; y < 150; y++)
+                for (int y = 200; y < 250; y++)
                 {
                     matGrid[x, y, z] = 1;
                 }
             }
         }
-        */
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(100, 100, 100, 1000));
+        sources.Add(new Source3D(150, 100, 150, 10000));
 
 
-        model = new ElasticModel3D(sources, matGrid, 0.1f, matArr, FDTDShader);
+        model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
         nsTotal = 0;
     }
 
@@ -304,6 +303,6 @@ public class Elastic3DManager : MonoBehaviour
 
         double nanosecExTime = ((double)stopWatch.ElapsedTicks / Stopwatch.Frequency) * 1e9;
         nsTotal += nanosecExTime;
-        //UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
+        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
     }
 }

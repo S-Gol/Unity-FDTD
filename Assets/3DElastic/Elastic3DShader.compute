@@ -9,13 +9,13 @@ struct elasticMaterial
     float vp, vs, rho, lam, mu;
 };
 
-int3 to3d(int idx, int xSize, int ySize, int zSize)
+uint3 to3d(uint idx, uint xSize, uint ySize, uint zSize)
 {
-    int z = idx / (xSize * ySize);
-    int newIdx = idx - (z * xSize * ySize);
-    int y = newIdx / xSize;
-    int x = newIdx % xSize;
-    return int3(x, y, z);
+    uint z = idx / (xSize * ySize);
+    uint newIdx = idx - (z * xSize * ySize);
+    uint y = newIdx / xSize;
+    uint x = newIdx % xSize;
+    return uint3(x, y, z);
 }
 
 
@@ -41,27 +41,33 @@ float co_dz;
 float dt;
 float t;
 
-int nx;
-int nx2;
-int ny;
-int ny2;
-int nz;
-int nz2;
+uint nx;
+uint nx2;
+uint ny;
+uint ny2;
+uint nz;
+uint nz2;
 
-int to1d(int x, int y, int z)
+int to1d(uint x, uint y, uint z)
 {
     return (z * nx2 * ny2) + (y * nx2) + x;
 }
 
 
 
-[numthreads(256, 1, 1)]
+[numthreads(512, 1, 1)]
 void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 {
     
     
-    int3 pos = to3d(id.x, nx2, ny2, nz2);
-    int index = id.x;
+    uint3 pos = to3d(id.x, nx2, ny2, nz2) + uint3(1, 1, 1);
+    uint index = to1d(pos.x, pos.y, pos.z);
+    
+    if (pos.x >= nx2 - 1 || pos.x <= 1 || pos.y >= ny2 - 1 || pos.y <= 1 || pos.z >= nz2 - 1 || pos.z <= 1)
+    {
+        u3Buffer[index] = 0;
+        return;
+    }
     
     elasticMaterial material = matDataBuffer[matGridBuffer[index]];
 
@@ -72,9 +78,9 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 
     float lam_mu = lam + mu;
     
-    int xOffset = 1;
-    int yOffset = nx2;
-    int zOffset = nx2 * ny2;
+    uint xOffset = 1;
+    uint yOffset = nx2;
+    uint zOffset = nx2 * ny2;
 	
 	
     //Central differencing 
@@ -110,11 +116,11 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(256, 1, 1)]
+[numthreads(512, 1, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
     int3 pos = to3d(id.x, nx2, ny2, nz2);
-    int index = to1d(pos.x , pos.y , pos.z);
+    int index = to1d(pos.x +1, pos.y +1, pos.z+1);
     
     u1Buffer[index] = u2Buffer[index] * weightBuffer[index];
     u2Buffer[index] = u3Buffer[index] * weightBuffer[index];

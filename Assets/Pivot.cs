@@ -13,6 +13,6 @@ public class Pivot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.eulerAngles = new Vector3(0, 90*Mathf.Sin(Time.timeSinceLevelLoad/5f), 0);
+        transform.Rotate(new Vector3(0, 10 * Time.deltaTime, 0));
     }
 }

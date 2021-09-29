@@ -1,4 +1,4 @@
-Shader "FDTD/Render3D"
+Shader "VolRendering/MIPRender"
 {
     Properties
     {
@@ -35,6 +35,7 @@ Shader "FDTD/Render3D"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+                float3 normal : NORMAL;
             };
 
             struct v2f
@@ -51,7 +52,7 @@ Shader "FDTD/Render3D"
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
                 o.vertexLocal = v.vertex;
-
+                o.normal = v.normal;
                 return o;
             }
             float _MinVal;
@@ -94,7 +95,7 @@ Shader "FDTD/Render3D"
                     const float t = iStep * stepSize;
                     const float3 currPos = rayStartPos + rayDir * t;
                     // Stop when we are outside the box
-                    if (currPos.x < 0.0f || currPos.x >= 1.0f || currPos.y < 0.0f || currPos.y > 1.0f || currPos.z < 0.0f || currPos.z > 1.0f)
+                    if (currPos.x < -0.0001f || currPos.x >= 1.0001f || currPos.y < -0.0001f || currPos.y > 1.0001f || currPos.z < -0.0001f || currPos.z > 1.0001f) // TODO: avoid branch?
                         break;
 
                     const float density = getDensity(currPos);
