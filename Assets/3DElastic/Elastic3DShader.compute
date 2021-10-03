@@ -30,7 +30,6 @@ RWStructuredBuffer<elasticMaterial> matDataBuffer;
 RWStructuredBuffer<int3> sourcePosBuffer;
 RWStructuredBuffer<float3> sourceValBuffer;
 
-
 RWStructuredBuffer<float> weightBuffer;
 
 float co_dx;
@@ -46,6 +45,7 @@ uint ny;
 uint ny2;
 uint nz;
 uint nz2;
+uint IDOffset;
 
 int to1d(uint x, uint y, uint z)
 {
@@ -59,14 +59,11 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 {
     
     
-    uint3 pos = to3d(id.x, nx2, ny2, nz2) + uint3(1, 1, 1);
-    uint index = to1d(pos.x, pos.y, pos.z);
+    uint3 pos = to3d(id.x + IDOffset, nx2, ny2, nz2) + uint3(1, 1, 1);
+    uint index = to1d(pos.x+1, pos.y+1, pos.z+1);
     
-    if (pos.x >= nx2 - 1 || pos.x <= 1 || pos.y >= ny2 - 1 || pos.y <= 1 || pos.z >= nz2 - 1 || pos.z <= 1)
-    {
-        u3Buffer[index] = 0;
-        return;
-    }
+    bool inBounds = !(pos.x >= nx2 - 1 || pos.x <= 1 || pos.y >= ny2 - 1 || pos.y <= 1 || pos.z >= nz2 - 1 || pos.z <= 1);
+
     
     elasticMaterial material = matDataBuffer[matGridBuffer[index]];
 
@@ -102,7 +99,7 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 
 	//New velocity from stresses 
     //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho
-    u3Buffer[index] = 2.0 * u2Buffer[index] - u1Buffer[index] + stress * dt2rho;
+    u3Buffer[index] = (2.0 * u2Buffer[index] - u1Buffer[index] + stress * dt2rho) * inBounds;
 
 }
 
@@ -118,7 +115,7 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 [numthreads(1024, 1, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
-    int3 pos = to3d(id.x, nx2, ny2, nz2);
+    int3 pos = to3d(id.x + IDOffset, nx2, ny2, nz2);
     int index = to1d(pos.x +1, pos.y +1, pos.z+1);
     
     u1Buffer[index] = u2Buffer[index] * weightBuffer[index];

@@ -54,7 +54,7 @@ Shader "VolRendering/DVRender"
             float _VelMult;
             float _OpacityMult;
             int3 size;
-            StructuredBuffer<float3> u3Buffer;
+            Buffer<float3> u2Buffer;
             StructuredBuffer<float> weightBuffer;
             sampler2D _CMapTex;
 
@@ -71,7 +71,7 @@ Shader "VolRendering/DVRender"
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
                 bool border = ((intPos.x <= bWidth) + (intPos.y <= bWidth) + (intPos.z <= bWidth) + (intPos.x >= size.x - bWidth) + (intPos.y >= size.y - bWidth) + (intPos.z >= size.z - bWidth)) > 1;
-                return length(u3Buffer[index])*5+ border*0.5;
+                return length(u2Buffer[index])*5+ border*0.5;
 
             }
 

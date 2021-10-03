@@ -83,7 +83,7 @@ Shader "VolRendering/MIPRender"
             // Direct Volume Rendering
             fixed4 frag_mip(v2f i) : SV_TARGET
             {
-                #define NUM_STEPS 512
+                #define NUM_STEPS 1024
                 const float stepSize = 1.732f/ NUM_STEPS;
 
                 float3 rayStartPos = i.vertexLocal + float3(0.5f, 0.5f, 0.5f);

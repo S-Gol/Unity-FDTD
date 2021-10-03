@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using ElasticFDTD;
 using System.Diagnostics;
+using UnityEngine.Rendering;
 
-public class Elastic3DManager : MonoBehaviour
+public class Elastic3DManagerAsync : MonoBehaviour
 {
-
-
     public ComputeShader FDTDShader;
 
     public bool restart;
@@ -45,6 +44,8 @@ public class Elastic3DManager : MonoBehaviour
         int sourceKernel;
         int copyKernel;
 
+
+        public bool asyncStepReady = true;
         #endregion
         int to1d(int x, int y, int z, int xSize, int ySize)
         {
@@ -224,15 +225,18 @@ public class Elastic3DManager : MonoBehaviour
             Shader.SetGlobalBuffer("sourcePosBuffer", sourcePosBuffer);
 
         }
-        public void timeStep()
+        public IEnumerator asyncTimestep()
         {
+            asyncStepReady = false;
             t += dt;
             nt++;
             Shader.SetGlobalFloat("t", t);
             int numThreadGroups = Mathf.CeilToInt((float)nx * (float)ny * (float)nz / threadsPerGroup);
             int tempCount = numThreadGroups;
             int offset = 0;
-            while(tempCount > 0)
+
+            //Dispatch the differential calcs
+            while (tempCount > 0)
             {
                 Shader.SetGlobalInt("IDOffset", offset);
                 int numDispatch = (int)Mathf.Min(65534, tempCount);
@@ -241,8 +245,9 @@ public class Elastic3DManager : MonoBehaviour
                 offset += numDispatch * (int)threadsPerGroup;
 
             }
-
-            //Dispatch the differential calcs
+            //wait for completion
+            GraphicsFence graphicsFence = Graphics.CreateGraphicsFence(GraphicsFenceType.CPUSynchronisation, SynchronisationStageFlags.ComputeProcessing);
+            yield return new WaitUntil(() => graphicsFence.passed);
 
             //Dispatch the source updates
             for (int i = 0; i < sourceVals.Length; i++)
@@ -268,12 +273,10 @@ public class Elastic3DManager : MonoBehaviour
                 FDTDShader.Dispatch(copyKernel, numDispatch, 1, 1);
                 tempCount -= numDispatch;
                 offset += numDispatch * (int)threadsPerGroup;
-
             }
-        }
-        public void StartAsyncTimestep()
-        {
-
+            graphicsFence = Graphics.CreateGraphicsFence(GraphicsFenceType.CPUSynchronisation, SynchronisationStageFlags.ComputeProcessing);
+            yield return new WaitUntil(() => graphicsFence.passed);
+            asyncStepReady = true;
         }
     }
 
@@ -286,7 +289,7 @@ public class Elastic3DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[1000, 50, 1000];
+        int[,,] matGrid = new int[500, 500, 500];
         
         /*
         for (int x = 0; x < 500; x++)
@@ -306,11 +309,8 @@ public class Elastic3DManager : MonoBehaviour
 
 
         model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
-        nsTotal = 0;
     }
 
-    Stopwatch stopWatch = new Stopwatch();
-    double nsTotal;
     // Update is called once per frame
     void Update()
     {
@@ -320,15 +320,11 @@ public class Elastic3DManager : MonoBehaviour
             restart = false;
             Start();
         }
-        stopWatch.Reset();
-        stopWatch.Start();
+        if (model.asyncStepReady)
+        {
+            StopAllCoroutines();
+            StartCoroutine(model.asyncTimestep());
+        }
 
-        model.timeStep();
-
-        stopWatch.Stop();
-
-        double nanosecExTime = ((double)stopWatch.ElapsedTicks / Stopwatch.Frequency) * 1e9;
-        nsTotal += nanosecExTime;
-        UnityEngine.Debug.Log("Average timestep, microseconds: " + nsTotal / (model.nt * 1000));
     }
 }
