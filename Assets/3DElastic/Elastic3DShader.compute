@@ -54,7 +54,7 @@ int to1d(uint x, uint y, uint z)
 
 
 
-[numthreads(1024, 1, 1)]
+[numthreads(256, 1, 1)]
 void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 {
     
@@ -112,7 +112,7 @@ void SetSourcePoint(uint3 id : SV_DispatchThreadID)
 }
 
 
-[numthreads(1024, 1, 1)]
+[numthreads(256, 1, 1)]
 void CopyBuffers(uint3 id : SV_DispatchThreadID)
 {
     int3 pos = to3d(id.x + IDOffset, nx2, ny2, nz2);

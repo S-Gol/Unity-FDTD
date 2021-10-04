@@ -68,15 +68,14 @@ Shader "VolRendering/MIPRender"
             {
                 return (z * size.x * size.y) + (y * size.x) + x;
             }
-
+            const int bWidth = 50;
             float getDensity(float3 pos)
             {
                 //return sin(pos.x*20)*sin(pos.y*20)*sin(pos.z*20);
                 int3 intPos = pos * size;
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
-                return length(u3Buffer[index])*5;
-
+                return length(u3Buffer[index]) * 5;
             }
 
 

@@ -224,6 +224,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
 
             Shader.SetGlobalBuffer("sourcePosBuffer", sourcePosBuffer);
 
+            print("Initialized with timestep: " + dt);
         }
         public IEnumerator asyncTimestep()
         {
@@ -241,7 +242,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
                 Shader.SetGlobalInt("IDOffset", offset);
                 int numDispatch = (int)Mathf.Min(65534, tempCount);
                 FDTDShader.Dispatch(differentialKernel, numDispatch, 1, 1);
-                tempCount -= numDispatch;
+                tempCount -= numDispatch;   
                 offset += numDispatch * (int)threadsPerGroup;
 
             }
@@ -256,7 +257,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
                 float f0 = sourceFreqs[i];
                 float t0 = 1f / f0;
                 float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-                sourceVals[i] = new Vector3(0, -tempV, 0);
+                sourceVals[i] = new Vector3(0, 0, tempV);
             }
 
             sourceValBuffer.SetData(sourceVals);
@@ -287,28 +288,33 @@ public class Elastic3DManagerAsync : MonoBehaviour
     {
         ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[2];
         matArr[0] = ElasticMaterials.materials["steel"];
-        matArr[1] = ElasticMaterials.materials["Nylon"];
+        matArr[1] = ElasticMaterials.materials["Void"];
 
-        int[,,] matGrid = new int[500, 500, 500];
+        int[,,] matGrid = new int[400, 400, 400];
+
+        float rad = 2500;
         
-        /*
         for (int x = 0; x < 500; x++)
         {
-            for (int z = 200; z < 300; z++)
+            for (int z = 0; z < 500; z++)
             {
-                for (int y = 0; y < 200; y++)
+                for (int y = 0; y < 500; y++)
                 {
-                    matGrid[x, y, z] = 1;
+                    float r = Mathf.Pow(x - 200, 2) + Mathf.Pow(y - 200, 2) + Mathf.Pow(z - 200, 2);
+                    if (r < rad)
+                    {
+                        matGrid[x, y, z] = 1;
+                    }
                 }
             }
         }
-        */
+
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(100, 25, 100, 10000));
+        sources.Add(new Source3D(200, 200, 50, 100000));
 
 
-        model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+        model = new ElasticModel3D(sources, matGrid, 0.001f, matArr, FDTDShader);
     }
 
     // Update is called once per frame
