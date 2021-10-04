@@ -290,10 +290,22 @@ public class Elastic3DManagerAsync : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Void"];
 
-        int[,,] matGrid = new int[400, 400, 400];
+        int[,,] matGrid = new int[300, 300, 300];
 
         float rad = 2500;
-        
+        for (int x = 0; x < 300; x++)
+        {
+            for (int z = 175; z < 225; z++)
+            {
+                for (int y = 0; y < 300; y++)
+                {
+                    matGrid[x, y, z] = 1;
+                }
+            }
+        }
+
+
+        /*
         for (int x = 0; x < 500; x++)
         {
             for (int z = 0; z < 500; z++)
@@ -307,14 +319,14 @@ public class Elastic3DManagerAsync : MonoBehaviour
                     }
                 }
             }
-        }
+        }*/
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(200, 200, 50, 100000));
+        sources.Add(new Source3D(200, 200, 50, 10000));
 
 
-        model = new ElasticModel3D(sources, matGrid, 0.001f, matArr, FDTDShader);
+        model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
     }
 
     // Update is called once per frame

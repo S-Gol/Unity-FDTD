@@ -73,7 +73,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxVal: 1
+    - _MaxVal: 10
     - _Metallic: 0
     - _MinVal: 0
     - _Mode: 0
@@ -85,7 +85,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _VelMult: 7
+    - _VelMult: 10
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
