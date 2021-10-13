@@ -31,6 +31,7 @@ RWStructuredBuffer<int3> sourcePosBuffer;
 RWStructuredBuffer<float3> sourceValBuffer;
 
 RWStructuredBuffer<float> weightBuffer;
+RWStructuredBuffer<float> pressureMagBuffer;
 
 float co_dx;
 float co_dy;
@@ -92,10 +93,11 @@ void Elastic3DDifferentials(int3 id : SV_DispatchThreadID)
 
 	//stress from velocity derivatives  
     float3 stress;
-
     stress.x = lam_2mu * du_dxx.x + mu * du_dyy.x + mu * du_dzz.x + lam_mu * du_dxz.z + lam_mu * du_dxy.y;
     stress.y = mu * du_dxx.y + lam_2mu * du_dyy.y + mu * du_dzz.y + lam_mu * du_dyz.z + lam_mu * du_dxy.x;
     stress.z = mu * du_dxx.z + mu * du_dyy.z + lam_2mu * du_dzz.z + lam_mu * du_dyz.y + lam_mu * du_dxz.x;
+    
+    pressureMagBuffer[index] = length(stress);
 
 	//New velocity from stresses 
     //U(t) = 2 * U(t - 1) - U(t - 2) + G dt2 / rho

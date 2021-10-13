@@ -286,7 +286,7 @@ public class Elastic3DManager : MonoBehaviour
         matArr[0] = ElasticMaterials.materials["steel"];
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[1000, 50, 1000];
+        int[,,] matGrid = new int[400, 400, 400];
         
         /*
         for (int x = 0; x < 500; x++)

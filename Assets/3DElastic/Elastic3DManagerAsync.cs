@@ -39,7 +39,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
         ComputeBuffer weightBuffer;
         ComputeBuffer matData, matGrid;
         ComputeBuffer sourceValBuffer, sourcePosBuffer;
-
+        ComputeBuffer pressureMagBuffer;
         int differentialKernel;
         int sourceKernel;
         int copyKernel;
@@ -180,6 +180,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
             u2Buffer = new ComputeBuffer(nx2 * ny2 * nz2, 12);
             u3Buffer = new ComputeBuffer(nx2 * ny2 * nz2, 12);
             weightBuffer = new ComputeBuffer(nx2 * ny2 * nz2, 4);
+            pressureMagBuffer = new ComputeBuffer(nx2 * ny2 * nz2, 4);
 
             weightBuffer.SetData(weights);
 
@@ -204,7 +205,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
             Shader.SetGlobalBuffer("matGridBuffer", matGrid);
             Shader.SetGlobalBuffer("matDataBuffer", matData);
 
-
+            Shader.SetGlobalBuffer("pressureMagBuffer", pressureMagBuffer);
 
             Shader.SetGlobalFloat("co_dx", 1f / (2f * dx));
             Shader.SetGlobalFloat("co_dy", 1f / (2f * dy));
@@ -257,7 +258,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
                 float f0 = sourceFreqs[i];
                 float t0 = 1f / f0;
                 float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-                sourceVals[i] = new Vector3(0, 0, tempV);
+                sourceVals[i] = new Vector3(0, 0, 10 * tempV);
             }
 
             sourceValBuffer.SetData(sourceVals);
@@ -288,16 +289,15 @@ public class Elastic3DManagerAsync : MonoBehaviour
     {
         ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[2];
         matArr[0] = ElasticMaterials.materials["steel"];
-        matArr[1] = ElasticMaterials.materials["Void"];
+        matArr[1] = ElasticMaterials.materials["Nylon"];
 
-        int[,,] matGrid = new int[300, 300, 300];
+        int[,,] matGrid = new int[400, 400, 400];
 
-        float rad = 2500;
-        for (int x = 0; x < 300; x++)
+        for (int x = 0; x < 400; x++)
         {
-            for (int z = 175; z < 225; z++)
+            for (int z = 150; z < 250; z++)
             {
-                for (int y = 0; y < 300; y++)
+                for (int y = 00; y < 400; y++)
                 {
                     matGrid[x, y, z] = 1;
                 }
