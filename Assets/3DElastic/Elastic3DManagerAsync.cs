@@ -292,7 +292,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
         matArr[1] = ElasticMaterials.materials["Nylon"];
 
         int[,,] matGrid = new int[400, 400, 400];
-
+        /*
         for (int x = 0; x < 400; x++)
         {
             for (int z = 150; z < 250; z++)
@@ -303,7 +303,7 @@ public class Elastic3DManagerAsync : MonoBehaviour
                 }
             }
         }
-
+        */
 
         /*
         for (int x = 0; x < 500; x++)
@@ -323,7 +323,8 @@ public class Elastic3DManagerAsync : MonoBehaviour
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(200, 200, 50, 10000));
+        sources.Add(new Source3D(200, 200, 300, 10000));
+        sources.Add(new Source3D(200, 200, 100, 10000));
 
 
         model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
