@@ -282,68 +282,17 @@ public class Elastic3DManagerAsync : MonoBehaviour
         }
     }
 
-    ElasticModel3D model;
 
     // Start is called before the first frame update
     void Start()
     {
-        ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[2];
-        matArr[0] = ElasticMaterials.materials["steel"];
-        matArr[1] = ElasticMaterials.materials["Nylon"];
-
-        int[,,] matGrid = new int[400, 400, 400];
-        /*
-        for (int x = 0; x < 400; x++)
-        {
-            for (int z = 150; z < 250; z++)
-            {
-                for (int y = 00; y < 400; y++)
-                {
-                    matGrid[x, y, z] = 1;
-                }
-            }
-        }
-        */
-
-        /*
-        for (int x = 0; x < 500; x++)
-        {
-            for (int z = 0; z < 500; z++)
-            {
-                for (int y = 0; y < 500; y++)
-                {
-                    float r = Mathf.Pow(x - 200, 2) + Mathf.Pow(y - 200, 2) + Mathf.Pow(z - 200, 2);
-                    if (r < rad)
-                    {
-                        matGrid[x, y, z] = 1;
-                    }
-                }
-            }
-        }*/
-
-        List<Source3D> sources = new List<Source3D>();
-
-        sources.Add(new Source3D(200, 200, 300, 10000));
-        sources.Add(new Source3D(200, 200, 100, 10000));
-
-
-        model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+        
     }
 
     // Update is called once per frame
     void Update()
     {
 
-        if (restart)
-        {
-            restart = false;
-            Start();
-        }
-        if (model.asyncStepReady)
-        {
-            StopAllCoroutines();
-            StartCoroutine(model.asyncTimestep());
-        }
 
     }
 }

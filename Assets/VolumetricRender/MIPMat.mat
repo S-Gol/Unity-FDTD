@@ -75,7 +75,7 @@ Material:
     - _GlossyReflections: 1
     - _MaxVal: 1e+13
     - _Metallic: 0
-    - _MinVal: 4e+11
+    - _MinVal: 1.3e+12
     - _Mode: 0
     - _OcclusionStrength: 1
     - _OpacityMult: 5e-13
