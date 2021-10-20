@@ -75,8 +75,6 @@ Shader "VolRendering/DVRender"
 
             }
 
-
-            // Direct Volume Rendering
             // Direct Volume Rendering
             fixed4 frag_dvr(v2f i) : SV_TARGET
             {
