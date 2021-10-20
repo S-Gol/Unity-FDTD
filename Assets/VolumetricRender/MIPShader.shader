@@ -73,12 +73,12 @@ Shader "VolRendering/MIPRender"
             const int bWidth = 50;
             float getDensity(float3 pos)
             {
-                //return sin(pos.x*20)*sin(pos.y*20)*sin(pos.z*20);
                 int3 intPos = pos * size;
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
+                bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z) * (intPos.x > 0) * (intPos.y > 0) * (intPos.z > 0));
 
-                return pressureMagBuffer[index];
+                return pressureMagBuffer[index]* inBounds;
             }
 
 
