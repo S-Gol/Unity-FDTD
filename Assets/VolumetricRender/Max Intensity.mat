@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MIPMat
+  m_Name: Max Intensity
   m_Shader: {fileID: 4800000, guid: 4d0752cc786ab7a47a348fbce1dd52fb, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
@@ -73,19 +73,19 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxVal: 1e+13
+    - _MaxVal: 2
     - _Metallic: 0
-    - _MinVal: 1.3e+12
+    - _MinVal: 1.1857142
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _OpacityMult: 5e-13
+    - _OpacityMult: 1
     - _Parallax: 0.02
     - _SmokeAbsorption: 0.3
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _VelMult: 5e-14
+    - _VelMult: 1
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

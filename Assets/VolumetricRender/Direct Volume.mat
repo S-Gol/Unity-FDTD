@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: DVRMat
+  m_Name: Direct Volume
   m_Shader: {fileID: 4800000, guid: ed7d2a22239116147b361e11b8350c1f, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4

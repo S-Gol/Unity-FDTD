@@ -78,7 +78,7 @@ Shader "VolRendering/MIPRender"
                 //return weightBuffer[index];
                 bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z) * (intPos.x > 0) * (intPos.y > 0) * (intPos.z > 0));
 
-                return pressureMagBuffer[index]* inBounds;
+                return pressureMagBuffer[index]* inBounds/1e13;
             }
 
 

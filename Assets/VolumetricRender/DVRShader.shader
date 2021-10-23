@@ -54,7 +54,7 @@ Shader "VolRendering/DVRender"
             float _VelMult;
             float _OpacityMult;
             int3 size;
-            Buffer<float3> u2Buffer;
+            StructuredBuffer<float> pressureMagBuffer;
             StructuredBuffer<float> weightBuffer;
             sampler2D _CMapTex;
 
@@ -69,9 +69,8 @@ Shader "VolRendering/DVRender"
                 int3 intPos = pos * size;
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
-                bool border = ((intPos.x <= bWidth) + (intPos.y <= bWidth) + (intPos.z <= bWidth) + (intPos.x >= size.x - bWidth) + (intPos.y >= size.y - bWidth) + (intPos.z >= size.z - bWidth)) > 1;
                 bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z)*(intPos.x>0) * (intPos.y > 0) * (intPos.z > 0));
-                return (length(u2Buffer[index])*5+ border*0.5)* inBounds;
+                return (pressureMagBuffer[index]/1e14)* inBounds;
 
             }
 
