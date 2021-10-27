@@ -2979,6 +2979,7 @@ MonoBehaviour:
   meshObj: {fileID: 1311713346}
   FDTDRenderObj: {fileID: 1468560966}
   meshSizeField: {fileID: 1375045706}
+  FDTDShader: {fileID: 7200000, guid: 627f6342afb09844b8a6b06550b88d38, type: 3}
 --- !u!114 &950161993
 MonoBehaviour:
   m_ObjectHideFlags: 0

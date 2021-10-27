@@ -5,6 +5,8 @@ using SimpleFileBrowser;
 using Assimp;
 using UnityEngine.UI;
 using g3;
+using ElasticFDTD;
+
 
 public class UI3DElastic : MonoBehaviour
 {
@@ -13,6 +15,13 @@ public class UI3DElastic : MonoBehaviour
     MeshFilter filter;
     ElasticModel3D sim;
     public InputField meshSizeField;
+    public ComputeShader FDTDShader;
+
+    ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
+        ElasticMaterials.materials["Void"],
+        ElasticMaterials.materials["steel"],
+    };
+
 
     IEnumerator waitForFileLoad()
     {
@@ -84,10 +93,31 @@ public class UI3DElastic : MonoBehaviour
             //Scale the FDTD grid
             int maxElementCount = (int)Mathf.Pow(int.Parse(meshSizeField.text),3);
             float rendererDx = Mathf.Pow(maxElementCount / sideLengthProduct,1f/3f);
-            Vector3 numElements = relSideLengths * rendererDx;
-
+            Vector3 numElementsF = relSideLengths * rendererDx;
+            Vector3Int numElements = new Vector3Int((int)numElementsF.x, (int)numElementsF.y, (int)numElementsF.z);
             Bitmap3 bmp = BitmapFromMesh.getBitmap(uMesh, (int)Mathf.Max(numElements.x, numElements.y, numElements.z));
-            print(bmp.Dimensions);
+
+            //Create the FDTD instance
+            if (sim != null)
+                sim.tryDispose();
+
+            int[,,] matGrid = new int[numElements.x, numElements.y, numElements.z];
+            for (int x = 0; x < numElements.x; x++)
+            {
+                for (int y = 0; y < numElements.y; y++)
+                {
+                    for (int z = 0; z < numElements.z; z++)
+                    {
+                        if (bmp.Get(new Vector3i(x, y, z))) 
+                            matGrid[x, y, z] = 1;
+                        else
+                            matGrid[x, y, z] = 0;
+                    }
+                }
+            }
+            List<Source3D> sources = new List<Source3D>();
+            sources.Add(new Source3D(numElements.x/2, numElements.y/2, numElements.z/2, 10000));
+            sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
         }
 
     }
@@ -104,6 +134,16 @@ public class UI3DElastic : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (sim!=null && sim.asyncStepReady)
+        {
+            StopAllCoroutines();
+            StartCoroutine(sim.asyncTimestep());
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (sim != null)
+            sim.tryDispose();
     }
 }
