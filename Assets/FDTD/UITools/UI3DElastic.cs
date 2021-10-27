@@ -16,6 +16,7 @@ public class UI3DElastic : MonoBehaviour
     ElasticModel3D sim;
     public InputField meshSizeField;
     public ComputeShader FDTDShader;
+    bool runSim = true;
     int padding = 5;
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
@@ -135,7 +136,7 @@ public class UI3DElastic : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (sim!=null && sim.asyncStepReady)
+        if (sim!=null && sim.asyncStepReady && runSim)
         {
             StopAllCoroutines();
             StartCoroutine(sim.asyncTimestep());
@@ -146,5 +147,9 @@ public class UI3DElastic : MonoBehaviour
     {
         if (sim != null)
             sim.tryDispose();
+    }
+    public void PausePlay(bool val)
+    {
+        runSim = val;
     }
 }
