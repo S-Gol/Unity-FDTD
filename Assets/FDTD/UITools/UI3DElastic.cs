@@ -85,11 +85,11 @@ public class UI3DElastic : MonoBehaviour
             uMesh.uv = uUv.ToArray();
             uMesh.RecalculateBounds();
             uMesh.RecalculateNormals();
-                
+            
             filter.mesh = uMesh;
             float divScale = 1/Mathf.Max(uMesh.bounds.max.x, uMesh.bounds.max.y, uMesh.bounds.max.z);
             meshObj.transform.localScale = new Vector3(divScale, divScale, divScale);
-            meshObj.transform.position = -uMesh.bounds.center;
+            meshObj.transform.position = -uMesh.bounds.center*divScale;
             
 
 

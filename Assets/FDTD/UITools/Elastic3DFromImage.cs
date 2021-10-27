@@ -10,7 +10,7 @@ public class Elastic3DFromImage : MonoBehaviour
     public Texture2D image;
     public int maxCells;
 
-    Elastic3DManagerAsync.ElasticModel3D model;
+    ElasticModel3D model;
     // Start is called before the first frame update
     void Start()
     {
@@ -50,7 +50,7 @@ public class Elastic3DFromImage : MonoBehaviour
         sources.Add(new Source3D(200, 390, 200, 10000));
 
 
-        model = new Elastic3DManagerAsync.ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+        model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
     }
 
     // Update is called once per frame
