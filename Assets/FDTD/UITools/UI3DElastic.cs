@@ -16,7 +16,7 @@ public class UI3DElastic : MonoBehaviour
     ElasticModel3D sim;
     public InputField meshSizeField;
     public ComputeShader FDTDShader;
-
+    int padding = 5;
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
@@ -101,7 +101,7 @@ public class UI3DElastic : MonoBehaviour
             if (sim != null)
                 sim.tryDispose();
 
-            int[,,] matGrid = new int[numElements.x, numElements.y, numElements.z];
+            int[,,] matGrid = new int[numElements.x+2* padding, numElements.y+2* padding, numElements.z+2* padding];
             for (int x = 0; x < numElements.x; x++)
             {
                 for (int y = 0; y < numElements.y; y++)
@@ -109,9 +109,9 @@ public class UI3DElastic : MonoBehaviour
                     for (int z = 0; z < numElements.z; z++)
                     {
                         if (bmp.Get(new Vector3i(x, y, z))) 
-                            matGrid[x, y, z] = 1;
+                            matGrid[x + padding, y + padding, z + padding] = 1;
                         else
-                            matGrid[x, y, z] = 0;
+                            matGrid[x + padding, y + padding, z + padding] = 0;
                     }
                 }
             }
@@ -119,10 +119,11 @@ public class UI3DElastic : MonoBehaviour
             sources.Add(new Source3D(numElements.x/2, numElements.y/2, numElements.z/2, 10000));
             sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
         }
-
+        yield break;
     }
     public void startFileBrowser()
     {
+        StopAllCoroutines();
         StartCoroutine(waitForFileLoad());
     }
     // Start is called before the first frame update

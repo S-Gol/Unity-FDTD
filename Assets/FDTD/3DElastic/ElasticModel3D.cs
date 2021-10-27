@@ -55,7 +55,7 @@ public class ElasticModel3D
         return new Vector3Int(x, y, z);
     }
 
-    public ElasticModel3D(List<Source3D> sources, int[,,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader)
+    public ElasticModel3D(List<Source3D> sources, int[,,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader, bool applyBoundaries = false)
     {
         dx = dy = dz = ds;
 
@@ -106,40 +106,41 @@ public class ElasticModel3D
         {
             weights[i] = 1;
         }
-
-        for (int x = 0; x < nx2; x++)
+        if (applyBoundaries)
         {
-            for (int y = 0; y < ny2; y++)
+            for (int x = 0; x < nx2; x++)
             {
-                for (int z = 0; z < nz2; z++)
+                for (int y = 0; y < ny2; y++)
                 {
-                    int i = 0;
-                    int j = 0;
-                    int k = 0;
-
-                    if (x < absThick + 1)
-                        i = absThick + 1 - x;
-                    if (y < absThick + 1)
-                        j = absThick + 1 - y;
-                    if (z < absThick + 1)
-                        k = absThick + 1 - z;
-
-                    if (nx - absThick < x)
-                        i = x - nx + absThick;
-                    if (ny - absThick < y)
-                        j = y - ny + absThick;
-                    if (nz - absThick < z)
-                        k = z - nz + absThick;
-
-                    if (i != 0 && j != 0 && k != 0) 
+                    for (int z = 0; z < nz2; z++)
                     {
-                        float rr = absRate * absRate * (i * i + j * j + k * k);
-                        weights[to1d(x,y,z,nx2,ny2)] = Mathf.Exp(-rr);
+                        int i = 0;
+                        int j = 0;
+                        int k = 0;
+
+                        if (x < absThick + 1)
+                            i = absThick + 1 - x;
+                        if (y < absThick + 1)
+                            j = absThick + 1 - y;
+                        if (z < absThick + 1)
+                            k = absThick + 1 - z;
+
+                        if (nx - absThick < x)
+                            i = x - nx + absThick;
+                        if (ny - absThick < y)
+                            j = y - ny + absThick;
+                        if (nz - absThick < z)
+                            k = z - nz + absThick;
+
+                        if (i != 0 || j != 0 || k != 0)
+                        {
+                            float rr = absRate * absRate * (i * i + j * j + k * k);
+                            weights[to1d(x, y, z, nx2, ny2)] = Mathf.Exp(-rr);
+                        }
                     }
                 }
             }
         }
-
         //Array allocation
         u1 = new Vector3[nx2 * ny2 * nz2];
         u2 = new Vector3[nx2 * ny2 * nz2];
@@ -252,7 +253,7 @@ public class ElasticModel3D
             float f0 = sourceFreqs[i];
             float t0 = 1f / f0;
             float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-            sourceVals[i] = new Vector3(0, 0, 10 * tempV);
+            sourceVals[i] = new Vector3(10 * tempV,0,0);
         }
 
         sourceValBuffer.SetData(sourceVals);

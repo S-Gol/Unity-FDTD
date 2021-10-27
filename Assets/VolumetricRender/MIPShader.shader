@@ -64,6 +64,7 @@ Shader "VolRendering/MIPRender"
             StructuredBuffer<float> weightBuffer;
             StructuredBuffer<int>matGridBuffer;
             StructuredBuffer<float> pressureMagBuffer;
+
             sampler2D _CMapTex;
 
             int to1d(int x, int y, int z)
@@ -76,8 +77,9 @@ Shader "VolRendering/MIPRender"
                 int3 intPos = pos * size;
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
-                bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z) * (intPos.x > 0) * (intPos.y > 0) * (intPos.z > 0));
+                bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z) * (intPos.x >= 0) * (intPos.y >= 0) * (intPos.z >= 0));
 
+                //return matGridBuffer[index];
                 return pressureMagBuffer[index]* inBounds/1e13;
             }
 
