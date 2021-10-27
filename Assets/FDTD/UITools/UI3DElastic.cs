@@ -22,7 +22,6 @@ public class UI3DElastic : MonoBehaviour
         ElasticMaterials.materials["steel"],
     };
 
-
     IEnumerator waitForFileLoad()
     {
 
@@ -130,6 +129,7 @@ public class UI3DElastic : MonoBehaviour
     void Start()
     {
         filter = meshObj.GetComponent<MeshFilter>();
+        FileBrowser.SetFilters(false, new FileBrowser.Filter("3D Models", ".stl", ".dae",".fbx",".obj",".blend"));
     }
 
     // Update is called once per frame
