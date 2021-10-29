@@ -7,21 +7,21 @@ public class RenderManager : MonoBehaviour
     public Material[] materials;
     public Dropdown materialDropdown;
     public GameObject SimRenderTarget;
-    MeshRenderer renderer;
+    MeshRenderer meshRenderer;
     int currentMat = 0;
     public GameObject[] panels;
     // Start is called before the first frame update
     void Start()
     {
 
-        renderer = SimRenderTarget.GetComponent<MeshRenderer>();
+        meshRenderer = SimRenderTarget.GetComponent<MeshRenderer>();
         ChangeRenderMode(currentMat);
     }
 
     // Update is called once per frame
     public void ChangeRenderMode(int id)
     {
-        renderer.material = materials[id];
+        meshRenderer.material = materials[id];
         currentMat = id;
         for (int i = 0; i < panels.Length; i++)
         {
