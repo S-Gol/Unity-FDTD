@@ -10,28 +10,40 @@ using ElasticFDTD;
 
 public class UI3DElastic : MonoBehaviour
 {
+    //Gameobjects for rendering
     public GameObject meshObj;
     public GameObject FDTDRenderObj;
     MeshFilter filter;
+
+    //Simulation class
     ElasticModel3D sim;
+    //UI
     public InputField meshSizeField;
     public ComputeShader FDTDShader;
+    //Is it running? 
     bool runSim = true;
-    int padding = 10;
 
+    //Additional spacing on grid at edges
+    const int padding = 10;
+
+    //Signed distance field in/out of mesh
+    //Used for source direction + bitmap
     MeshSignedDistanceGrid sdf;
 
+    //Default materials
+    //TODO change to user selctions
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
     };
 
+    //Async file explorer opening
     IEnumerator waitForFileLoad()
     {
-
+        //Wait for the load dialog to succeed
         yield return FileBrowser.WaitForLoadDialog(FileBrowser.PickMode.Files, false, null, null, "Load Files and Folders", "Load");
         Debug.Log(FileBrowser.Success);
-
+        //Make sure we loaded a file
         if (FileBrowser.Success)
         {
             // Print paths of the selected files (FileBrowser.Result) (null, if FileBrowser.Success is false)
@@ -39,6 +51,7 @@ public class UI3DElastic : MonoBehaviour
                 Debug.Log("Loading file from: " + FileBrowser.Result[i]);
             string path = FileBrowser.Result[0];
 
+            //Create an ASSIMP context to load the file
             AssimpContext importer = new AssimpContext();
             Scene scene = importer.ImportFile(path);
             if (!scene.HasMeshes)
