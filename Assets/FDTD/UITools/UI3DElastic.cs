@@ -17,7 +17,7 @@ public class UI3DElastic : MonoBehaviour
     public InputField meshSizeField;
     public ComputeShader FDTDShader;
     bool runSim = true;
-    int padding = 5;
+    int padding = 10;
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
@@ -88,7 +88,7 @@ public class UI3DElastic : MonoBehaviour
             //Find max entents, use for FDTD grid size calcs
             Vector3 relSideLengths = uMesh.bounds.extents * 2 * divScale;
             float sideLengthProduct = relSideLengths.x * relSideLengths.y * relSideLengths.z;
-            FDTDRenderObj.transform.localScale = relSideLengths;
+            FDTDRenderObj.transform.localScale = relSideLengths*1.01f;
 
             //Scale the FDTD grid
             int maxElementCount = (int)Mathf.Pow(int.Parse(meshSizeField.text),3);
