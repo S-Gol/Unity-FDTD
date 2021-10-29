@@ -47,7 +47,7 @@ public class Elastic3DFromImage : MonoBehaviour
 
         List<Source3D> sources = new List<Source3D>();
 
-        sources.Add(new Source3D(200, 390, 200, 10000));
+        sources.Add(new Source3D(200, 390, 200, 10000, new Vector3(0,1,0)));
 
 
         model = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);

@@ -36,6 +36,9 @@ public class UI3DElastic : MonoBehaviour
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
     };
+    //Sim properties
+    List<Source3D> sources = new List<Source3D>();
+    int[,,] matGrid;
 
     //Async file explorer opening
     IEnumerator waitForFileLoad()
@@ -119,7 +122,7 @@ public class UI3DElastic : MonoBehaviour
             if (sim != null)
                 sim.tryDispose();
 
-            int[,,] matGrid = new int[numElements.x+2* padding, numElements.y+2* padding, numElements.z+2* padding];
+            matGrid = new int[numElements.x+2* padding, numElements.y+2* padding, numElements.z+2* padding];
             for (int x = 0; x < numElements.x; x++)
             {
                 for (int y = 0; y < numElements.y; y++)
@@ -133,9 +136,7 @@ public class UI3DElastic : MonoBehaviour
                     }
                 }
             }
-            List<Source3D> sources = new List<Source3D>();
-            sources.Add(new Source3D(numElements.x/2, numElements.y/2, numElements.z/2, 10000));
-            sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+            sources.Clear();
         }
         yield break;
     }
@@ -149,6 +150,12 @@ public class UI3DElastic : MonoBehaviour
     {
         filter = meshObj.GetComponent<MeshFilter>();
         FileBrowser.SetFilters(false, new FileBrowser.Filter("3D Models", ".stl", ".dae",".fbx",".obj",".blend"));
+    }
+    public void initSim()
+    {
+        sources.Add(new Source3D(150,150,150, 10000, new Vector3(1,0,0)));
+        sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+
     }
 
     // Update is called once per frame

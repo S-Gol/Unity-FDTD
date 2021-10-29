@@ -22,16 +22,19 @@ namespace ElasticFDTD
     public struct Source3D
     {
         public Vector3Int point;
+        public Vector3 normal;
         public float f;
-        public Source3D(int X, int Y, int Z, float F)
+        public Source3D(int X, int Y, int Z, float F, Vector3 dir)
         {
             point = new Vector3Int(X, Y, Z);
             f = F;
+            normal = dir;
         }
-        public Source3D(Vector3Int pt, float F)
+        public Source3D(Vector3Int pt, float F, Vector3 dir)
         {
             point = pt;
             f = F;
+            normal = dir;
         }
     }
     public struct Material

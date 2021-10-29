@@ -19,6 +19,7 @@ public class ElasticModel3D
     public float maxVP, dt;
     List<Vector3Int> sourcePoints;
     List<float> sourceFreqs;
+    List<Vector3> sourceDirs;
     Vector3[] sourceVals;
 
     int absThick;
@@ -148,12 +149,13 @@ public class ElasticModel3D
 
         sourcePoints = new List<Vector3Int>();
         sourceFreqs = new List<float>();
-
+        sourceDirs = new List<Vector3>();
         //Assign sources
         for (int i = 0; i < sources.Count; i++)
         {
             sourcePoints.Add(sources[i].point);
             sourceFreqs.Add(sources[i].f);
+            sourceDirs.Add(sources[i].normal);
         }
         sourceVals = new Vector3[sources.Count];
 
@@ -253,7 +255,7 @@ public class ElasticModel3D
             float f0 = sourceFreqs[i];
             float t0 = 1f / f0;
             float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-            sourceVals[i] = new Vector3(10 * tempV,0,0);
+            sourceVals[i] = sourceDirs[i];
         }
 
         sourceValBuffer.SetData(sourceVals);
@@ -294,7 +296,7 @@ public class ElasticModel3D
         if (sourcePosBuffer.IsValid())
             sourcePosBuffer.Dispose();
         if (pressureMagBuffer.IsValid())
-            sourcePosBuffer.Dispose();
+            pressureMagBuffer.Dispose();
     }
 }
 
