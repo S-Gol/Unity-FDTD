@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using g3;
 
-public static class BitmapFromMesh 
+public static class BitmapUtils 
 {
-    public static Bitmap3 getBitmap(Mesh mesh, int maxDim)
+    public static MeshSignedDistanceGrid SDFFromMesh(Mesh mesh, int maxDim)
     {
         DMesh3 gMesh = new DMesh3();
         //Convert Unity mesh to Geometry3Sharp mesh
@@ -24,6 +24,14 @@ public static class BitmapFromMesh
         MeshSignedDistanceGrid sdf = new MeshSignedDistanceGrid(gMesh, gMesh.CachedBounds.MaxDim / (maxDim));
         sdf.Compute();
 
+
+        Debug.Log("Computed SDF. Size: " + sdf.Dimensions);
+
+        //Send the bitmap to the GPU.
+        return sdf;
+    }
+    public static Bitmap3 bmpFromSDF(MeshSignedDistanceGrid sdf)
+    {
         //Convert SDF to a bitmap 
         Bitmap3 bmp = new Bitmap3(sdf.Dimensions);
 
@@ -32,10 +40,6 @@ public static class BitmapFromMesh
             float f = sdf[idx.x, idx.y, idx.z];
             bmp.Set(idx, (f < 0) ? true : false);
         }
-        Debug.Log("Computed SDF. Size: " + sdf.Dimensions);
-
-        //Send the bitmap to the GPU.
         return bmp;
-
     }
 }

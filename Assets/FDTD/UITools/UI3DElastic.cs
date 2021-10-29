@@ -18,6 +18,9 @@ public class UI3DElastic : MonoBehaviour
     public ComputeShader FDTDShader;
     bool runSim = true;
     int padding = 10;
+
+    MeshSignedDistanceGrid sdf;
+
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
@@ -95,7 +98,9 @@ public class UI3DElastic : MonoBehaviour
             float rendererDx = Mathf.Pow(maxElementCount / sideLengthProduct,1f/3f);
             Vector3 numElementsF = relSideLengths * rendererDx;
             Vector3Int numElements = new Vector3Int((int)numElementsF.x, (int)numElementsF.y, (int)numElementsF.z);
-            Bitmap3 bmp = BitmapFromMesh.getBitmap(uMesh, (int)Mathf.Max(numElements.x, numElements.y, numElements.z));
+
+            sdf = BitmapUtils.SDFFromMesh(uMesh, (int)Mathf.Max(numElements.x, numElements.y, numElements.z));
+            Bitmap3 bmp = BitmapUtils.bmpFromSDF(sdf);
 
             //Create the FDTD instance
             if (sim != null)

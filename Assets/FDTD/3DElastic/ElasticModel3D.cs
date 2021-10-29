@@ -290,11 +290,11 @@ public class ElasticModel3D
         if (matGrid.IsValid())
             matGrid.Dispose();
         if (sourceValBuffer.IsValid())
-            weightBuffer.Dispose();
+            sourceValBuffer.Dispose();
         if (sourcePosBuffer.IsValid())
-            matData.Dispose();
+            sourcePosBuffer.Dispose();
         if (pressureMagBuffer.IsValid())
-            matGrid.Dispose();
+            sourcePosBuffer.Dispose();
     }
 }
 
