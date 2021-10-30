@@ -255,7 +255,7 @@ public class ElasticModel3D
             float f0 = sourceFreqs[i];
             float t0 = 1f / f0;
             float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-            sourceVals[i] = sourceDirs[i];
+            sourceVals[i] = sourceDirs[i]*10;
         }
 
         sourceValBuffer.SetData(sourceVals);
