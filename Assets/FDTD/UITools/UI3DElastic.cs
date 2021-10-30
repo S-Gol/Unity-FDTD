@@ -29,6 +29,7 @@ public class UI3DElastic : MonoBehaviour
 
     //Signed distance field in/out of mesh
     //Used for source direction + bitmap
+    float[,,] sdfPadded;
     MeshSignedDistanceGrid sdf;
     Bitmap3 bmp;
 
@@ -46,13 +47,15 @@ public class UI3DElastic : MonoBehaviour
     const int numSteps = 1024;
     const float stepSize = 1.732f / numSteps;
     Vector3 halfCube = new Vector3(0.5f, 0.5f, 0.5f);
+    const float tempFreq = 10000;
 
-    public bool raycastMatGrid(UnityEngine.Ray ray, out Vector3Int hitPos)
+    public bool raycastMatGrid(UnityEngine.Ray ray, out Vector3Int hitIdx, out Vector3 hitWorldPos)
     {
         RaycastHit firstHit;
-        if(Physics.Raycast(ray, out firstHit))
+        hitIdx = new Vector3Int();
+        hitWorldPos = new Vector3();
+        if (Physics.Raycast(ray, out firstHit))
         {
-            hitPos = new Vector3Int();
             if (firstHit.transform.name != "FDTDRenderObj")
                 return false;
 
@@ -77,7 +80,8 @@ public class UI3DElastic : MonoBehaviour
                     bool intersect = matGrid[idx.x, idx.y, idx.z] != 0;
                     if (intersect)
                     {
-                        hitPos = idx;
+                        hitIdx = idx;
+                        hitWorldPos = firstHit.transform.TransformPoint(currPos-halfCube);
                         return true;
                     }
                 }
@@ -87,7 +91,7 @@ public class UI3DElastic : MonoBehaviour
         }
         else
         {
-            hitPos = new Vector3Int();
+            hitIdx = new Vector3Int();
             return false;
         }
     }
@@ -98,17 +102,31 @@ public class UI3DElastic : MonoBehaviour
         StartCoroutine(sourcePlacement());
 
     }
+    public static Vector3 SDFGradient(Vector3Int pos, float[,,] sdf)
+    {
+        float dx = sdf[pos.x - 1, pos.y, pos.z] - sdf[pos.x + 1, pos.y, pos.z];
+        float dy = sdf[pos.x, pos.y - 1, pos.z] - sdf[pos.x, pos.y, pos.z + 1];
+        float dz = sdf[pos.x, pos.y, pos.z - 1] - sdf[pos.x, pos.y, pos.z + 1];
+        Vector3 ret = new Vector3(dx, dy, dz);
+
+        return (ret.normalized);
+    }
     IEnumerator sourcePlacement()
     {
         bool hasHit = false;
+        Vector3Int hitIdx = new Vector3Int(padding, padding, padding);
+        Vector3 hitPos;
         while (!(hasHit && Input.GetMouseButtonDown(0)))
         {
             UnityEngine.Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
-            Vector3Int hitPos;
-            hasHit = raycastMatGrid(ray, out hitPos);
 
+            hasHit = raycastMatGrid(ray, out hitIdx, out hitPos);
             yield return null;
         }
+        Vector3 normal = SDFGradient(hitIdx, sdfPadded);
+        print("adding source " + normal);
+        sources.Add(new Source3D(hitIdx, tempFreq, normal));
+
         print("break");
         yield break;
     }
@@ -191,11 +209,35 @@ public class UI3DElastic : MonoBehaviour
             sdf = BitmapUtils.SDFFromMesh(uMesh, (int)Mathf.Max(numElements.x, numElements.y, numElements.z));
             bmp = BitmapUtils.bmpFromSDF(sdf);
 
+            fieldSize = new Vector3Int(numElements.x + 2 * padding, numElements.y + 2 * padding, numElements.z + 2 * padding);
+
+            sdfPadded = new float[fieldSize.x, fieldSize.y, fieldSize.z];
+            for (int x = 0; x < fieldSize.x; x++)
+            {
+                for (int y = 0; y < fieldSize.y; y++)
+                {
+                    for (int z = 0; z < fieldSize.z; z++)
+                    {
+                        sdfPadded[x, y, z] = 1;
+                    }
+                }
+            }
+
+            for (int x = 0; x < sdf.Dimensions.x; x++)
+            {
+                for (int y = 0; y < sdf.Dimensions.y; y++)
+                {
+                    for (int z = 0; z < sdf.Dimensions.z; z++)
+                    {
+                        sdfPadded[x + padding, y + padding, z + padding] = sdf.Grid[x, y, z];
+                    }
+                }
+            }
+
             //Create the FDTD instance
             if (sim != null)
                 sim.tryDispose();
 
-            fieldSize = new Vector3Int(numElements.x + 2 * padding, numElements.y + 2 * padding, numElements.z + 2 * padding);
             matGrid = new int[fieldSize.x, fieldSize.y, fieldSize.z];
             for (int x = 0; x < numElements.x; x++)
             {
@@ -228,7 +270,6 @@ public class UI3DElastic : MonoBehaviour
     }
     public void initSim()
     {
-        sources.Add(new Source3D(150,150,150, 10000, new Vector3(1,0,0)));
         sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
 
     }
