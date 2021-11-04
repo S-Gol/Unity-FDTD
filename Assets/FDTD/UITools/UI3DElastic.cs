@@ -19,10 +19,11 @@ public class UI3DElastic : MonoBehaviour
     //Simulation class
     ElasticModel3D sim;
     //UI
-    public InputField meshSizeField;
+    public InputField elementCountField;
     public ComputeShader FDTDShader;
     public Text simStatus;
     public Text elementSize;
+    public InputField meshDimField;
 
     //Is it running? 
     bool runSim = true;
@@ -48,6 +49,7 @@ public class UI3DElastic : MonoBehaviour
     List<Source3D> sources = new List<Source3D>();
     int[,,] matGrid;
     Vector3Int fieldSize;
+    float maxFieldSize; 
 
     //raycast vars
     const int numSteps = 1024;
@@ -217,7 +219,7 @@ public class UI3DElastic : MonoBehaviour
             FDTDRenderObj.transform.localScale = relSideLengths*1.01f;
 
             //Scale the FDTD grid
-            int maxElementCount = (int)Mathf.Pow(int.Parse(meshSizeField.text),3);
+            int maxElementCount = (int)Mathf.Pow(int.Parse(elementCountField.text),3);
             float rendererDx = Mathf.Pow(maxElementCount / sideLengthProduct,1f/3f);
             Vector3 numElementsF = relSideLengths * rendererDx;
             Vector3Int numElements = new Vector3Int((int)numElementsF.x, (int)numElementsF.y, (int)numElementsF.z);
@@ -269,6 +271,7 @@ public class UI3DElastic : MonoBehaviour
                 }
             }
             sources.Clear();
+            meshDimField.interactable = true;
         }
         yield break;
     }
@@ -286,7 +289,10 @@ public class UI3DElastic : MonoBehaviour
     }
     public void initSim()
     {
-        sim = new ElasticModel3D(sources, matGrid, ds, matArr, FDTDShader);
+        if (ds != 0 && matGrid != null)
+        {
+            sim = new ElasticModel3D(sources, matGrid, ds, matArr, FDTDShader);
+        }
 
     }
 
@@ -311,7 +317,15 @@ public class UI3DElastic : MonoBehaviour
     }
     public void updateModelSize(string input)
     {
-        float modelSize = float.Parse(input);
+
+        if (!float.TryParse(input, out maxFieldSize))
+        {
+            ds = 0;
+            return;
+
+        }
+        ds = maxFieldSize / Mathf.Max(fieldSize.x, fieldSize.y, fieldSize.z);
+        elementSize.text = "Element Size, mm: " + (ds*1000).ToString("#.00");
 
     }
 }

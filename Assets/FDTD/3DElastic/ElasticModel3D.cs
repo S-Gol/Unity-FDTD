@@ -94,7 +94,7 @@ public class ElasticModel3D
                 maxVP = mat.vp;
         }
 
-        dt = 0.8f / (maxVP * Mathf.Sqrt(1.0f / Mathf.Pow(dx, 2) + 1.0f / Mathf.Pow(dy, 2) + 1.0f / Mathf.Pow(dz,2)));
+        dt = 0.8f / (maxVP * Mathf.Sqrt(3.0f / Mathf.Pow(dx, 2)));
 
         // Boundary - no reflections 
         absThick = Mathf.RoundToInt(Mathf.Min(Mathf.Min(Mathf.Floor(0.15f * nx), Mathf.Floor(0.15f * ny)), 0.15f*nz));
