@@ -33,7 +33,7 @@ public static class ElasticMaterials
         {"Nylon", new ElasticFDTD.Material(2620,1070,1110)},
         {"Polyethylene", new ElasticFDTD.Material(1950,540,900)},
         {"Polystyrene", new ElasticFDTD.Material(2350,1120,1060)},
-        {"Void", new ElasticFDTD.Material(343,0,1)},
+        {"Void", new ElasticFDTD.Material(-1,0,1)},
 
 
 

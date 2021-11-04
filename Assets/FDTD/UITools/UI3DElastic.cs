@@ -21,6 +21,9 @@ public class UI3DElastic : MonoBehaviour
     //UI
     public InputField meshSizeField;
     public ComputeShader FDTDShader;
+    public Text simStatus;
+    public Text elementSize;
+
     //Is it running? 
     bool runSim = true;
 
@@ -32,6 +35,8 @@ public class UI3DElastic : MonoBehaviour
     float[,,] sdfPadded;
     MeshSignedDistanceGrid sdf;
     Bitmap3 bmp;
+    //Element size
+    float ds = 0.01f;
 
     //Default materials
     //TODO change to user selctions
@@ -43,6 +48,7 @@ public class UI3DElastic : MonoBehaviour
     List<Source3D> sources = new List<Source3D>();
     int[,,] matGrid;
     Vector3Int fieldSize;
+
     //raycast vars
     const int numSteps = 1024;
     const float stepSize = 1.732f / numSteps;
@@ -80,6 +86,8 @@ public class UI3DElastic : MonoBehaviour
                     bool intersect = matGrid[idx.x, idx.y, idx.z] != 0;
                     if (intersect)
                     {
+                        currPos = rayStartPos + transformDir * (t + stepSize);
+                        idx = new Vector3Int((int)(currPos.x * fieldSize.x), (int)(currPos.y * fieldSize.y), (int)(currPos.z * fieldSize.z));
                         hitIdx = idx;
                         hitWorldPos = firstHit.transform.TransformPoint(currPos-halfCube);
                         return true;
@@ -113,28 +121,36 @@ public class UI3DElastic : MonoBehaviour
     }
     IEnumerator sourcePlacement()
     {
+        simStatus.text = "Placing source, esc to cancel";
         bool hasHit = false;
         Vector3Int hitIdx = new Vector3Int(padding, padding, padding);
         Vector3 hitPos;
         while (!(hasHit && Input.GetMouseButtonDown(0)))
         {
+            if (Input.GetKey(KeyCode.Escape))
+            {
+                simStatus.text = "Aborted source placement";
+                yield break;
+            }
             UnityEngine.Ray ray = UnityEngine.Camera.main.ScreenPointToRay(Input.mousePosition);
 
             hasHit = raycastMatGrid(ray, out hitIdx, out hitPos);
             yield return null;
         }
+
         Vector3 normal = SDFGradient(hitIdx, sdfPadded);
         print("adding source " + normal);
         sources.Add(new Source3D(hitIdx, tempFreq, normal));
-
-        print("break");
+        simStatus.text = "Source added";
         yield break;
     }
     //Async file explorer opening
     IEnumerator waitForFileLoad()
     {
+        simStatus.text = "File selection";
         //Wait for the load dialog to succeed
         yield return FileBrowser.WaitForLoadDialog(FileBrowser.PickMode.Files, false, null, null, "Load Files and Folders", "Load");
+        simStatus.text = "Loading file";
         Debug.Log(FileBrowser.Success);
         //Make sure we loaded a file
         if (FileBrowser.Success)
@@ -270,7 +286,7 @@ public class UI3DElastic : MonoBehaviour
     }
     public void initSim()
     {
-        sim = new ElasticModel3D(sources, matGrid, 0.01f, matArr, FDTDShader);
+        sim = new ElasticModel3D(sources, matGrid, ds, matArr, FDTDShader);
 
     }
 
@@ -292,5 +308,10 @@ public class UI3DElastic : MonoBehaviour
     public void PausePlay(bool val)
     {
         runSim = val;
+    }
+    public void updateModelSize(string input)
+    {
+        float modelSize = float.Parse(input);
+
     }
 }
