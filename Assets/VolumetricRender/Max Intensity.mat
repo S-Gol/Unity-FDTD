@@ -73,19 +73,19 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxVal: 2
+    - _MaxVal: 200
     - _Metallic: 0
     - _MinVal: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _OpacityMult: 1
+    - _OpacityMult: 0.34285715
     - _Parallax: 0.02
     - _SmokeAbsorption: 0.3
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
-    - _VelMult: 0.22142857
+    - _VelMult: 0.014285714
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

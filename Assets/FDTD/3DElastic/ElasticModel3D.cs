@@ -165,7 +165,7 @@ public class ElasticModel3D
 
     public void shaderInit()
     {
-        UnityEngine.Debug.Log("Initializing 3D FDTD compute");
+        UnityEngine.Debug.Log("Initializing 3D FDTD compute. Timestep, us:" + this.dt * 1e6);
 
         differentialKernel = FDTDShader.FindKernel("Elastic3DDifferentials");
         sourceKernel = FDTDShader.FindKernel("SetSourcePoint");

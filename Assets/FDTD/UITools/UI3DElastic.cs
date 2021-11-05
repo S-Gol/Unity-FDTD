@@ -24,6 +24,8 @@ public class UI3DElastic : MonoBehaviour
     public Text simStatus;
     public Text elementSize;
     public InputField meshDimField;
+    public Text maxFreq;
+    public InputField freqInputField;
 
     //Is it running? 
     bool runSim = true;
@@ -55,7 +57,6 @@ public class UI3DElastic : MonoBehaviour
     const int numSteps = 1024;
     const float stepSize = 1.732f / numSteps;
     Vector3 halfCube = new Vector3(0.5f, 0.5f, 0.5f);
-    const float tempFreq = 10000;
 
     public bool raycastMatGrid(UnityEngine.Ray ray, out Vector3Int hitIdx, out Vector3 hitWorldPos)
     {
@@ -142,7 +143,7 @@ public class UI3DElastic : MonoBehaviour
 
         Vector3 normal = SDFGradient(hitIdx, sdfPadded);
         print("adding source " + normal);
-        sources.Add(new Source3D(hitIdx, tempFreq, normal));
+        sources.Add(new Source3D(hitIdx, float.Parse(freqInputField.text), normal));
         simStatus.text = "Source added";
         yield break;
     }
@@ -272,6 +273,7 @@ public class UI3DElastic : MonoBehaviour
             }
             sources.Clear();
             meshDimField.interactable = true;
+            updateModelSize(meshDimField.text);
         }
         yield break;
     }
@@ -289,7 +291,7 @@ public class UI3DElastic : MonoBehaviour
     }
     public void initSim()
     {
-        if (ds != 0 && matGrid != null)
+        if (ds != 0 && matGrid != null && sources.Count != 0)
         {
             sim = new ElasticModel3D(sources, matGrid, ds, matArr, FDTDShader);
         }
@@ -325,6 +327,8 @@ public class UI3DElastic : MonoBehaviour
 
         }
         ds = maxFieldSize / Mathf.Max(fieldSize.x, fieldSize.y, fieldSize.z);
+        maxFreq.text = "Max Freq: " + (100.0 / ds).ToString("#.");
+
         elementSize.text = "Element Size, mm: " + (ds*1000).ToString("#.00");
 
     }
