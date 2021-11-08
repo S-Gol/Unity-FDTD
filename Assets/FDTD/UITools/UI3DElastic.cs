@@ -143,8 +143,10 @@ public class UI3DElastic : MonoBehaviour
 
         Vector3 normal = SDFGradient(hitIdx, sdfPadded);
         print("adding source " + normal);
-        sources.Add(new Source3D(hitIdx, float.Parse(freqInputField.text), normal));
-        simStatus.text = "Source added";
+        float freq;
+        if(float.TryParse(freqInputField.text, out freq))
+            sources.Add(new Source3D(hitIdx, freq, normal));
+            simStatus.text = "Source added";
         yield break;
     }
     //Async file explorer opening
