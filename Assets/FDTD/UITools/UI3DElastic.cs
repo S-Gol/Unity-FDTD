@@ -26,6 +26,8 @@ public class UI3DElastic : MonoBehaviour
     public InputField meshDimField;
     public Text maxFreq;
     public InputField freqInputField;
+    Stats statsManager;
+    public Dropdown materialDropdown;
 
     //Is it running? 
     bool runSim = true;
@@ -42,7 +44,6 @@ public class UI3DElastic : MonoBehaviour
     float ds = 0.01f;
 
     //Default materials
-    //TODO change to user selctions
     ElasticFDTD.Material[] matArr = new ElasticFDTD.Material[] {
         ElasticMaterials.materials["Void"],
         ElasticMaterials.materials["steel"],
@@ -145,7 +146,7 @@ public class UI3DElastic : MonoBehaviour
         print("adding source " + normal);
         float freq;
         if(float.TryParse(freqInputField.text, out freq))
-            sources.Add(new Source3D(hitIdx, freq, normal));
+            sources.Add(new Source3D(hitIdx, freq*1000, normal));
             simStatus.text = "Source added";
         yield break;
     }
@@ -290,12 +291,24 @@ public class UI3DElastic : MonoBehaviour
         filter = meshObj.GetComponent<MeshFilter>();
         col = meshObj.GetComponent<MeshCollider>();
         FileBrowser.SetFilters(false, new FileBrowser.Filter("3D Models", ".stl", ".dae",".fbx",".obj",".blend"));
+        statsManager = GetComponent<Stats>();
+        List<Dropdown.OptionData> dropdownOptions = new List<Dropdown.OptionData>();
+        foreach(KeyValuePair<string, ElasticFDTD.Material> m in ElasticMaterials.materials)
+        {
+            dropdownOptions.Add(new Dropdown.OptionData(m.Key));
+        }
+        materialDropdown.options = dropdownOptions;
+
     }
     public void initSim()
     {
         if (ds != 0 && matGrid != null && sources.Count != 0)
         {
+            //TODO fix this abomination
+            //it works but that's a lot of square brackets
+            matArr[1] = ElasticMaterials.materials[materialDropdown.options[materialDropdown.value].text];
             sim = new ElasticModel3D(sources, matGrid, ds, matArr, FDTDShader);
+            statsManager.sim = sim;
         }
 
     }
@@ -329,7 +342,7 @@ public class UI3DElastic : MonoBehaviour
 
         }
         ds = maxFieldSize / Mathf.Max(fieldSize.x, fieldSize.y, fieldSize.z);
-        maxFreq.text = "Max Freq: " + (100.0 / ds).ToString("#.");
+        maxFreq.text = "Max Freq, khz: " + (0.1f / ds).ToString("#.");
 
         elementSize.text = "Element Size, mm: " + (ds*1000).ToString("#.00");
 
