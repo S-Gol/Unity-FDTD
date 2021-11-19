@@ -35,7 +35,7 @@ public class Elastic3DFromImage : MonoBehaviour
                 for (int z = 0; z < sizeZ; z++)
                 {
                     Color col = image.GetPixel(x, y);
-                    if (col.r + col.g + col.b > 0.9f)
+                    if (col.r + col.g + col.b < 0.9f)
                     {
                         matGrid[x, y, z] = 1;
                     }

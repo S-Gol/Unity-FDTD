@@ -66,6 +66,7 @@ Shader "VolRendering/MIPRender"
             StructuredBuffer<float> pressureMagBuffer;
 
             sampler2D _CMapTex;
+            float scale_factor;
 
             int to1d(int x, int y, int z)
             {
@@ -80,7 +81,7 @@ Shader "VolRendering/MIPRender"
                 bool inBounds = (intPos.x < size.x) && (intPos.y < size.y) && (intPos.z < size.z) && (intPos.x > 0) && (intPos.y > 0) && (intPos.z > 0);
 
                 //return matGridBuffer[index]+1;
-                return pressureMagBuffer[index]* inBounds/1e12;
+                return (pressureMagBuffer[index] / scale_factor) * inBounds* _VelMult;
             }
 
 
@@ -108,7 +109,7 @@ Shader "VolRendering/MIPRender"
                 }
 
                 // Maximum intensity projection
-                float4 col = tex2D(_CMapTex, float2(maxDensity* _VelMult, 0.5));
+                float4 col = tex2D(_CMapTex, float2(maxDensity, 0.5));
                 //float4 col = float4(1, 1, 1, maxDensity);
                 col.w = maxDensity* _OpacityMult;
                 return col;

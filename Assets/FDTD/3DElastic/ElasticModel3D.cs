@@ -28,6 +28,7 @@ public class ElasticModel3D
     //Pseudo-3D arrays
     public Vector3[] u1, u2, u3;
     public float[] weights;
+    public const float scaleFactor = 2e15f;
 
     //Shader data
     ComputeShader FDTDShader;
@@ -222,6 +223,8 @@ public class ElasticModel3D
 
 
         Shader.SetGlobalBuffer("sourcePosBuffer", sourcePosBuffer);
+
+
 
     }
     public IEnumerator asyncTimestep()

@@ -57,6 +57,7 @@ Shader "VolRendering/DVRender"
             StructuredBuffer<float> pressureMagBuffer;
             StructuredBuffer<float> weightBuffer;
             sampler2D _CMapTex;
+            float scale_factor;
 
             int to1d(int x, int y, int z)
             {
@@ -70,7 +71,7 @@ Shader "VolRendering/DVRender"
                 int index = to1d(intPos.x, intPos.y, intPos.z);
                 //return weightBuffer[index];
                 bool inBounds = ((intPos.x < size.x) * (intPos.y < size.y) * (intPos.z < size.z)*(intPos.x>0) * (intPos.y > 0) * (intPos.z > 0));
-                return (pressureMagBuffer[index]/1e12)* inBounds;
+                return (pressureMagBuffer[index]/ scale_factor)* inBounds;
 
             }
 
