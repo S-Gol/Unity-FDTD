@@ -28,7 +28,7 @@ public class ElasticModel3D
     //Pseudo-3D arrays
     public Vector3[] u1, u2, u3;
     public float[] weights;
-    public const float scaleFactor = 2e15f;
+    public const float scaleFactor = 1e10f;
 
     //Shader data
     ComputeShader FDTDShader;
@@ -60,7 +60,7 @@ public class ElasticModel3D
     public ElasticModel3D(List<Source3D> sources, int[,,] matGrid, float ds, ElasticFDTD.Material[] Mats, ComputeShader FDTDShader, bool applyBoundaries = false)
     {
         dx = dy = dz = ds;
-
+        this.ds = ds;
         t = 0;
         nt = 0;
         materials = Mats;
@@ -258,7 +258,7 @@ public class ElasticModel3D
             float f0 = sourceFreqs[i];
             float t0 = 1f / f0;
             float tempV = Mathf.Exp(-((Mathf.Pow((2 * (t - 2 * t0) / (t0)), 2)))) * Mathf.Sin(2 * Mathf.PI * f0 * t);
-            sourceVals[i] = sourceDirs[i]* tempV*10;
+            sourceVals[i] = sourceDirs[i]* tempV*ds;
         }
 
         sourceValBuffer.SetData(sourceVals);
