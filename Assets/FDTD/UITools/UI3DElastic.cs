@@ -111,6 +111,15 @@ public class UI3DElastic : MonoBehaviour
     {
         if(matGrid == null)
             return;
+        doAngledSource = false;
+        StartCoroutine(sourcePlacement());
+
+    }
+    public void startSourcePlacementAngled()
+    {
+        if (matGrid == null)
+            return;
+        doAngledSource = true;
         StartCoroutine(sourcePlacement());
 
     }
@@ -123,6 +132,7 @@ public class UI3DElastic : MonoBehaviour
 
         return (ret.normalized);
     }
+    bool doAngledSource;
     IEnumerator sourcePlacement()
     {
         simStatus.text = "Placing source, esc to cancel";
@@ -145,6 +155,14 @@ public class UI3DElastic : MonoBehaviour
         Vector3 normal = SDFGradient(hitIdx, sdfPadded);
         print("adding source " + normal);
         float freq;
+
+        if (doAngledSource)
+        {
+            print("Angled source");
+            Vector3 rot = Vector3.Cross(normal, UnityEngine.Camera.main.transform.forward);
+            normal = UnityEngine.Quaternion.AngleAxis(45, rot) * normal;
+        }
+
         if(float.TryParse(freqInputField.text, out freq))
             sources.Add(new Source3D(hitIdx, freq*1000, normal));
             simStatus.text = "Source added";
